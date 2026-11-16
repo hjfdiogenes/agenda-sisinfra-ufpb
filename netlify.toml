@@ -1,0 +1,20 @@
+# Configuração de Publicação no Netlify
+# Agenda SisInfra - UFPB / PRG
+
+[build]
+  # Diretório raiz com os arquivos estáticos (index.html, js, css, assets)
+  publish = "."
+
+# Configurações de cabeçalhos de segurança e cache
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+
+# Permite navegação direta nas rotas da aplicação de página única (SPA)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
