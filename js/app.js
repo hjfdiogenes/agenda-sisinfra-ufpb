@@ -126,6 +126,9 @@ class AppManager {
     const logoutBtn = document.getElementById("btn-logout");
     const closeLoginBtn = document.getElementById("btn-close-login");
     const loginForm = document.getElementById("form-login");
+    const googleLoginBtn = document.getElementById("btn-login-google");
+    const reqAccessBtn = document.getElementById("btn-request-access-now");
+    const testUnauthBtn = document.getElementById("btn-demo-test-unauth");
 
     if (loginBtn) {
       loginBtn.addEventListener("click", () => {
@@ -146,6 +149,74 @@ class AppManager {
       });
     }
 
+    // Login com Google Workspace Institucional (@academico.ufpb.br)
+    if (googleLoginBtn) {
+      googleLoginBtn.addEventListener("click", async () => {
+        try {
+          googleLoginBtn.disabled = true;
+          googleLoginBtn.innerHTML = `<span>⏳</span> <span>Conectando ao Google...</span>`;
+          await window.authService.loginWithGoogle();
+          this.closeModal("modal-login");
+          this.showToast("Login com Google Institucional realizado com sucesso!", "success");
+        } catch (err) {
+          if (err.code === "AUTH_NOT_AUTHORIZED") {
+            this.pendingAuthUser = { email: err.userEmail, name: err.userName };
+            const unauthEmailEl = document.getElementById("unauth-user-email");
+            if (unauthEmailEl) unauthEmailEl.textContent = err.userEmail;
+            this.closeModal("modal-login");
+            this.openModal("modal-acesso-pendente");
+          } else if (err.code === "auth/popup-closed-by-user") {
+            this.showToast("Janela de autenticação com Google foi fechada.", "info");
+          } else {
+            alert(err.message || "Falha na autenticação Google.");
+          }
+        } finally {
+          googleLoginBtn.disabled = false;
+          googleLoginBtn.innerHTML = `
+            <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span>Entrar com Google (@academico.ufpb.br)</span>
+          `;
+        }
+      });
+    }
+
+    // Botão de Solicitar Acesso por E-mail ao Prof. Hidelbrando
+    if (reqAccessBtn) {
+      reqAccessBtn.addEventListener("click", () => {
+        const pEmail = this.pendingAuthUser?.email || "usuario@academico.ufpb.br";
+        const pName = this.pendingAuthUser?.name || "";
+        this.closeModal("modal-acesso-pendente");
+        window.emailService.requestAccessEmail(pEmail, pName);
+      });
+    }
+
+    // Botão de teste para conta não autorizada (demonstração)
+    if (testUnauthBtn) {
+      testUnauthBtn.addEventListener("click", async () => {
+        const testEmail = prompt("Informe um e-mail institucional @academico.ufpb.br para simular uma conta nova não cadastrada:", "visitante.teste@academico.ufpb.br");
+        if (!testEmail) return;
+        try {
+          await window.authService.simulateGoogleLogin(testEmail);
+        } catch (err) {
+          if (err.code === "AUTH_NOT_AUTHORIZED") {
+            this.pendingAuthUser = { email: err.userEmail, name: err.userName };
+            const unauthEmailEl = document.getElementById("unauth-user-email");
+            if (unauthEmailEl) unauthEmailEl.textContent = err.userEmail;
+            this.closeModal("modal-login");
+            this.openModal("modal-acesso-pendente");
+          } else {
+            alert(err.message);
+          }
+        }
+      });
+    }
+
+    // Login com E-mail e Senha
     if (loginForm) {
       loginForm.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -176,7 +247,7 @@ class AppManager {
       demoAdminBtn.addEventListener("click", async () => {
         await window.authService.quickLogin("admin");
         this.closeModal("modal-login");
-        this.showToast("Acessado como Administrador SisInfra / PRG", "success");
+        this.showToast("Acessado como Gestor Principal (Prof. Dr. Hidelbrando Diógenes)", "success");
       });
     }
 
@@ -191,6 +262,7 @@ class AppManager {
 
   updateAuthUI() {
     const isLogged = window.authService.isLoggedIn();
+    const isMaster = window.authService.isMasterAdmin();
     const isAdmin = window.authService.isAdmin();
     const user = window.authService.getCurrentUser();
 
@@ -212,8 +284,11 @@ class AppManager {
       if (userNameEl) userNameEl.textContent = user.nome;
 
       if (userBadgeEl) {
-        if (isAdmin) {
-          userBadgeEl.textContent = "Gestor SisInfra / Admin";
+        if (isMaster) {
+          userBadgeEl.textContent = "👑 Gestor Principal Master";
+          userBadgeEl.className = "text-[11px] px-2.5 py-0.5 rounded-full font-extrabold bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-xs border border-amber-600";
+        } else if (isAdmin) {
+          userBadgeEl.textContent = "Gestor SisInfra / PRG";
           userBadgeEl.className = "text-[11px] px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-300";
         } else {
           userBadgeEl.textContent = "Operador Autorizado";
@@ -226,7 +301,7 @@ class AppManager {
       if (tabAuditoriosBtn) tabAuditoriosBtn.classList.remove("hidden");
       if (tabBloqueiosBtn) tabBloqueiosBtn.classList.remove("hidden");
 
-      // Gestão de Pessoas Autorizadas: apenas Administrador Geral
+      // Gestão de Pessoas Autorizadas: apenas Gestores / Admins
       if (tabUsuariosBtn) {
         if (isAdmin) tabUsuariosBtn.classList.remove("hidden");
         else tabUsuariosBtn.classList.add("hidden");
@@ -1520,10 +1595,17 @@ class AppManager {
     const currentUser = window.authService.getCurrentUser();
 
     tbody.innerHTML = usuarios.map(u => {
-      const isCurrent = currentUser && currentUser.email === u.email;
-      const badgePerfil = (u.perfil === "admin")
-        ? `<span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[11px]">Administrador Geral</span>`
-        : `<span class="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded text-[11px]">Operador</span>`;
+      const isCurrent = currentUser && (currentUser.email || "").toLowerCase() === (u.email || "").toLowerCase();
+      const isMaster = u.isMasterAdmin || (u.email || "").toLowerCase() === "hjfd@academico.ufpb.br" || (u.email || "").toLowerCase() === "hjfd@cademico.ufpb.br";
+
+      let badgePerfil = "";
+      if (isMaster) {
+        badgePerfil = `<span class="bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-extrabold px-2.5 py-0.5 rounded text-[10.5px] shadow-xs">👑 Gestor Principal Master</span>`;
+      } else if (u.perfil === "admin") {
+        badgePerfil = `<span class="bg-amber-100 text-amber-900 border border-amber-300 font-bold px-2 py-0.5 rounded text-[11px]">Gestor SisInfra / PRG</span>`;
+      } else {
+        badgePerfil = `<span class="bg-blue-100 text-blue-800 border border-blue-200 font-bold px-2 py-0.5 rounded text-[11px]">Operador</span>`;
+      }
 
       const badgeStatus = (u.status === "ativo")
         ? `<span class="bg-green-100 text-green-800 font-bold px-2 py-0.5 rounded-full text-[11px]">Ativo</span>`
@@ -1531,20 +1613,27 @@ class AppManager {
 
       return `
         <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-          <td class="py-3 px-4 font-bold text-slate-800">${this.escapeHtml(u.nome)}</td>
+          <td class="py-3 px-4 font-bold text-slate-800">
+            <div class="flex items-center gap-1.5">
+              ${isMaster ? '<span>👑</span>' : ''}
+              <span>${this.escapeHtml(u.nome)}</span>
+            </div>
+          </td>
           <td class="py-3 px-4 text-xs font-mono text-slate-600">${this.escapeHtml(u.email)}</td>
           <td class="py-3 px-4 text-xs text-slate-600">${this.escapeHtml(u.setor || "-")}</td>
           <td class="py-3 px-4">${badgePerfil}</td>
           <td class="py-3 px-4">${badgeStatus}</td>
           <td class="py-3 px-4 text-right whitespace-nowrap">
-            ${!isCurrent ? `
+            ${isMaster ? `
+              <span class="text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-1 rounded">👑 Permanente</span>
+            ` : (!isCurrent ? `
               <button onclick="appManager.toggleUserStatus('${u.id}', '${u.status}')" class="text-xs font-semibold px-2 py-1 rounded mr-1 ${u.status === 'ativo' ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' : 'bg-green-50 text-green-700 hover:bg-green-100'}">
                 ${u.status === 'ativo' ? 'Desativar' : 'Ativar'}
               </button>
               <button onclick="appManager.deleteUser('${u.id}')" class="text-xs text-red-600 hover:text-red-800 font-semibold px-2 py-1 bg-red-50 rounded">
                 Excluir
               </button>
-            ` : '<span class="text-xs text-slate-400 italic">Sua conta</span>'}
+            ` : '<span class="text-xs text-slate-400 italic">Sua conta</span>')}
           </td>
         </tr>
       `;
@@ -1552,17 +1641,39 @@ class AppManager {
   }
 
   async toggleUserStatus(id, currentStatus) {
+    const usuarios = await window.storageService.getUsuarios();
+    const u = usuarios.find(usr => usr.id === id);
+    if (u && (u.isMasterAdmin || (u.email || "").toLowerCase() === "hjfd@academico.ufpb.br" || (u.email || "").toLowerCase() === "hjfd@cademico.ufpb.br")) {
+      alert("Ação não permitida: O Gestor Principal permanente (Prof. Dr. Hidelbrando Diógenes) não pode ser desativado.");
+      return;
+    }
+
     const newStatus = (currentStatus === "ativo") ? "inativo" : "ativo";
-    await window.storageService.updateUsuario(id, { status: newStatus });
-    this.showToast(`Status do usuário alterado para ${newStatus}.`, "info");
-    this.renderUsuariosList();
+    try {
+      await window.storageService.updateUsuario(id, { status: newStatus });
+      this.showToast(`Status do usuário alterado para ${newStatus}.`, "info");
+      this.renderUsuariosList();
+    } catch (e) {
+      alert(e.message);
+    }
   }
 
   async deleteUser(id) {
+    const usuarios = await window.storageService.getUsuarios();
+    const u = usuarios.find(usr => usr.id === id);
+    if (u && (u.isMasterAdmin || (u.email || "").toLowerCase() === "hjfd@academico.ufpb.br" || (u.email || "").toLowerCase() === "hjfd@cademico.ufpb.br")) {
+      alert("Ação não permitida: O Gestor Principal permanente (Prof. Dr. Hidelbrando Diógenes) não pode ser excluído.");
+      return;
+    }
+
     if (!confirm("Tem certeza que deseja remover este usuário autorizado?")) return;
-    await window.storageService.deleteUsuario(id);
-    this.showToast("Usuário removido.", "info");
-    this.renderUsuariosList();
+    try {
+      await window.storageService.deleteUsuario(id);
+      this.showToast("Usuário removido com sucesso.", "info");
+      this.renderUsuariosList();
+    } catch (e) {
+      alert(e.message);
+    }
   }
 
   // ================= IMPRESSÃO OFICIAL =================

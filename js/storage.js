@@ -6,11 +6,13 @@
 
 const SEED_USUARIOS = [
   {
-    id: "usr_admin",
-    nome: "Prof. Coordenador da Central / Gestor SisInfra",
-    email: "admin@academico.ufpb.br",
-    setor: "PRG / Coordenação Central de Aulas",
+    id: "usr_hjfd_principal",
+    nome: "Prof. Dr. Hidelbrando Diógenes",
+    email: "hjfd@academico.ufpb.br",
+    setor: "Pró-Reitoria de Graduação (PRG / UFPB)",
     perfil: "admin",
+    isMasterAdmin: true,
+    cargo: "Gestor Principal da Agenda SisInfra",
     status: "ativo",
     senha: "admin123",
     criadoEm: "2026-01-15T08:00:00.000Z"
@@ -21,6 +23,8 @@ const SEED_USUARIOS = [
     email: "operador@academico.ufpb.br",
     setor: "Central de Aulas - Campus I",
     perfil: "operador",
+    isMasterAdmin: false,
+    cargo: "Operador de Reservas",
     status: "ativo",
     senha: "operador123",
     criadoEm: "2026-02-01T10:00:00.000Z"
@@ -80,7 +84,7 @@ const SEED_BLOQUEIOS = [
     horaFim: "12:00",
     descricao: "Horário exclusivo para turmas presenciais da graduação no SIGAA (2026.2 - Turno Manhã).",
     ativo: true,
-    criadoPor: "admin@academico.ufpb.br",
+    criadoPor: "hjfd@academico.ufpb.br",
     criadoEm: "2026-08-15T08:00:00.000Z"
   },
   {
@@ -98,7 +102,7 @@ const SEED_BLOQUEIOS = [
     horaFim: "18:00",
     descricao: "Horário exclusivo para turmas presenciais da graduação no SIGAA (2026.2 - Turno Tarde).",
     ativo: true,
-    criadoPor: "admin@academico.ufpb.br",
+    criadoPor: "hjfd@academico.ufpb.br",
     criadoEm: "2026-08-15T08:00:00.000Z"
   },
   {
@@ -116,7 +120,7 @@ const SEED_BLOQUEIOS = [
     horaFim: "22:00",
     descricao: "Horário exclusivo para turmas noturnas da graduação via SIGAA (2026.2).",
     ativo: true,
-    criadoPor: "admin@academico.ufpb.br",
+    criadoPor: "hjfd@academico.ufpb.br",
     criadoEm: "2026-08-15T08:00:00.000Z"
   },
   {
@@ -134,7 +138,7 @@ const SEED_BLOQUEIOS = [
     horaFim: "22:00",
     descricao: "Período oficial de exames finais das turmas do semestre 2026.2.",
     ativo: true,
-    criadoPor: "admin@academico.ufpb.br",
+    criadoPor: "hjfd@academico.ufpb.br",
     criadoEm: "2026-08-15T08:00:00.000Z"
   },
 
@@ -154,7 +158,7 @@ const SEED_BLOQUEIOS = [
     horaFim: "12:00",
     descricao: "Horário reservado para turmas do SIGAA no semestre 2027.1 (Turno Manhã).",
     ativo: true,
-    criadoPor: "admin@academico.ufpb.br",
+    criadoPor: "hjfd@academico.ufpb.br",
     criadoEm: "2026-10-01T08:00:00.000Z"
   },
   {
@@ -172,7 +176,7 @@ const SEED_BLOQUEIOS = [
     horaFim: "18:00",
     descricao: "Horário reservado para turmas do SIGAA no semestre 2027.1 (Turno Tarde).",
     ativo: true,
-    criadoPor: "admin@academico.ufpb.br",
+    criadoPor: "hjfd@academico.ufpb.br",
     criadoEm: "2026-10-01T08:00:00.000Z"
   },
   {
@@ -190,7 +194,7 @@ const SEED_BLOQUEIOS = [
     horaFim: "22:00",
     descricao: "Horário reservado para turmas noturnas no semestre 2027.1.",
     ativo: true,
-    criadoPor: "admin@academico.ufpb.br",
+    criadoPor: "hjfd@academico.ufpb.br",
     criadoEm: "2026-10-01T08:00:00.000Z"
   },
   {
@@ -208,7 +212,7 @@ const SEED_BLOQUEIOS = [
     horaFim: "22:00",
     descricao: "Período oficial de aplicação de exames finais do semestre 2027.1.",
     ativo: true,
-    criadoPor: "admin@academico.ufpb.br",
+    criadoPor: "hjfd@academico.ufpb.br",
     criadoEm: "2026-10-01T08:00:00.000Z"
   },
 
@@ -228,7 +232,7 @@ const SEED_BLOQUEIOS = [
     horaFim: "12:00",
     descricao: "Horário reservado para turmas regulares do SIGAA no semestre 2027.2 (Turno Manhã).",
     ativo: true,
-    criadoPor: "admin@academico.ufpb.br",
+    criadoPor: "hjfd@academico.ufpb.br",
     criadoEm: "2026-11-01T08:00:00.000Z"
   },
   {
@@ -246,7 +250,7 @@ const SEED_BLOQUEIOS = [
     horaFim: "18:00",
     descricao: "Horário reservado para turmas regulares do SIGAA no semestre 2027.2 (Turno Tarde).",
     ativo: true,
-    criadoPor: "admin@academico.ufpb.br",
+    criadoPor: "hjfd@academico.ufpb.br",
     criadoEm: "2026-11-01T08:00:00.000Z"
   },
   {
@@ -264,7 +268,7 @@ const SEED_BLOQUEIOS = [
     horaFim: "22:00",
     descricao: "Horário reservado para turmas noturnas da graduação no semestre 2027.2.",
     ativo: true,
-    criadoPor: "admin@academico.ufpb.br",
+    criadoPor: "hjfd@academico.ufpb.br",
     criadoEm: "2026-11-01T08:00:00.000Z"
   },
   {
@@ -282,7 +286,7 @@ const SEED_BLOQUEIOS = [
     horaFim: "22:00",
     descricao: "Período oficial de exames finais do semestre 2027.2.",
     ativo: true,
-    criadoPor: "admin@academico.ufpb.br",
+    criadoPor: "hjfd@academico.ufpb.br",
     criadoEm: "2026-11-01T08:00:00.000Z"
   }
 ];
@@ -311,7 +315,7 @@ function getSampleBookings() {
       recursos: ["Datashow / Projetor Laser HD", "Microfones sem Fio (Lapela / Bastão)", "Ar-condicionado Split / Central", "Sistema de Som Embutido / Caixas Ativas"],
       status: "confirmado",
       observacoes: "Necessário apoio de técnico de som e microfones no púlpito.",
-      criadoPor: "admin@academico.ufpb.br",
+      criadoPor: "hjfd@academico.ufpb.br",
       criadoEm: new Date().toISOString()
     },
     {
@@ -442,9 +446,47 @@ class StorageService {
       }
     }
 
-    // Inicialização dos Usuários
-    if (!localStorage.getItem("prg_usuarios")) {
+    // Inicialização e sincronização dos Usuários
+    let storedUsers = [];
+    try {
+      storedUsers = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
+    } catch (e) {
+      storedUsers = [];
+    }
+
+    if (!Array.isArray(storedUsers) || storedUsers.length === 0) {
       localStorage.setItem("prg_usuarios", JSON.stringify(SEED_USUARIOS));
+    } else {
+      // Garante que o Gestor Principal hjfd@academico.ufpb.br esteja presente e com status ativo e master
+      const hasMaster = storedUsers.some(u => 
+        (u.email || "").toLowerCase() === "hjfd@academico.ufpb.br" || 
+        (u.email || "").toLowerCase() === "hjfd@cademico.ufpb.br"
+      );
+
+      if (!hasMaster) {
+        // Remove admin genérico antigo se houver e adiciona o Gestor Principal no topo
+        storedUsers = storedUsers.filter(u => (u.email || "").toLowerCase() !== "admin@academico.ufpb.br");
+        storedUsers.unshift(SEED_USUARIOS[0]);
+        localStorage.setItem("prg_usuarios", JSON.stringify(storedUsers));
+      } else {
+        let changed = false;
+        storedUsers.forEach(u => {
+          const em = (u.email || "").toLowerCase();
+          if (em === "hjfd@academico.ufpb.br" || em === "hjfd@cademico.ufpb.br") {
+            if (!u.isMasterAdmin || u.perfil !== "admin" || u.status !== "ativo") {
+              u.isMasterAdmin = true;
+              u.perfil = "admin";
+              u.status = "ativo";
+              u.nome = "Prof. Dr. Hidelbrando Diógenes";
+              u.cargo = "Gestor Principal da Agenda SisInfra";
+              changed = true;
+            }
+          }
+        });
+        if (changed) {
+          localStorage.setItem("prg_usuarios", JSON.stringify(storedUsers));
+        }
+      }
     }
 
     // Inicialização dos Agendamentos
@@ -818,12 +860,17 @@ class StorageService {
 
   async createUsuario(data) {
     const emailNorm = (data.email || "").trim().toLowerCase();
-    if (!emailNorm.endsWith("@academico.ufpb.br")) {
+    if (!emailNorm.endsWith("@academico.ufpb.br") && emailNorm !== "hjfd@cademico.ufpb.br") {
       throw new Error("O e-mail deve pertencer obrigatoriamente ao domínio institucional @academico.ufpb.br");
     }
 
+    // Regra: Somente o Gestor Principal pode conceder o perfil de Administrador / Gestor SisInfra
+    if (data.perfil === "admin" && window.authService && !window.authService.isMasterAdmin()) {
+      throw new Error("Apenas o Gestor Principal (Prof. Dr. Hidelbrando Diógenes) pode cadastrar novos Gestores / Administradores.");
+    }
+
     const list = await this.getUsuarios();
-    const jaExiste = list.some(u => u.email.toLowerCase() === emailNorm);
+    const jaExiste = list.some(u => (u.email || "").toLowerCase() === emailNorm);
     if (jaExiste) {
       throw new Error("Já existe um usuário cadastrado com este e-mail.");
     }
@@ -853,6 +900,22 @@ class StorageService {
   }
 
   async updateUsuario(id, data) {
+    const list = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
+    const target = list.find(u => u.id === id);
+
+    // Proteção ao Gestor Principal Permanente
+    if (target) {
+      const em = (target.email || "").toLowerCase();
+      if (target.isMasterAdmin || em === "hjfd@academico.ufpb.br" || em === "hjfd@cademico.ufpb.br") {
+        if (data.status === "inativo") {
+          throw new Error("O Gestor Principal permanente (Prof. Dr. Hidelbrando Diógenes) não pode ser desativado.");
+        }
+        if (data.perfil && data.perfil !== "admin") {
+          throw new Error("O Gestor Principal deve manter obrigatoriamente o perfil de Administrador Geral.");
+        }
+      }
+    }
+
     if (window.isFirebaseActive && window.fbDb) {
       try {
         await window.fbDb.collection("usuarios").doc(id).update(data);
@@ -861,7 +924,6 @@ class StorageService {
       }
     }
 
-    const list = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
     const idx = list.findIndex(u => u.id === id);
     if (idx >= 0) {
       list[idx] = { ...list[idx], ...data };
@@ -872,6 +934,17 @@ class StorageService {
   }
 
   async deleteUsuario(id) {
+    const list = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
+    const target = list.find(u => u.id === id);
+
+    // Proteção ao Gestor Principal Permanente
+    if (target) {
+      const em = (target.email || "").toLowerCase();
+      if (target.isMasterAdmin || em === "hjfd@academico.ufpb.br" || em === "hjfd@cademico.ufpb.br") {
+        throw new Error("Ação não permitida: O Gestor Principal permanente (Prof. Dr. Hidelbrando Diógenes) não pode ser excluído.");
+      }
+    }
+
     if (window.isFirebaseActive && window.fbDb) {
       try {
         await window.fbDb.collection("usuarios").doc(id).delete();
@@ -880,7 +953,6 @@ class StorageService {
       }
     }
 
-    const list = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
     const filtered = list.filter(u => u.id !== id);
     localStorage.setItem("prg_usuarios", JSON.stringify(filtered));
     return true;

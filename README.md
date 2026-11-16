@@ -116,14 +116,18 @@ O menu da Agenda SisInfra é segmentado dinamicamente para preservar a seguranç
    - **📑 4. Pauta Diária:** Controle diário de uso dos espaços para portaria e suporte técnico.
    - **🏢 5. Infraestrutura & Checklist:** Gestão de equipamentos por sala (ativar/desativar datashows, som, etc.) e controle de reserva.
    - **🔒 6. Bloqueios & Período Letivo:** Gestão de bloqueios de turnos de aula (2026.2, 2027.1, 2027.2) e manutenções.
-   - **👥 7. Pessoas Autorizadas:** Gestão de operadores (exclusivo para Administrador Geral com e-mail `@academico.ufpb.br`).
+   - **👥 7. Pessoas Autorizadas:** Gestão de membros autorizados e concessão de acessos (gerenciado pelo Gestor Principal Master).
 
-### 🔑 Contas de Demonstração para Testes Rápidos:
-| Perfil | E-mail Institucional | Senha | Acesso |
+### 🔑 Autenticação Google Workspace e Contas Institucionais:
+- **Autenticação Unificada Google:** Acesso direto com o botão **"Entrar com Google (@academico.ufpb.br)"**. O sistema valida o domínio institucional `academico.ufpb.br` e autorizações previamente concedidas.
+- **Gestor Principal Master:** **Prof. Dr. Hidelbrando Diógenes** (`hjfd@academico.ufpb.br`), responsável exclusivo por conceder acesso ao sistema e cadastrar novos gestores da PRG/UFPB e operadores.
+- **Usuários não autorizados:** Caso uma conta `@academico.ufpb.br` tente acessar sem autorização prévia, o sistema impede o acesso e disponibiliza o fluxo de **Solicitação de Acesso ao Prof. Hidelbrando** por e-mail com 1 clique.
+
+| Perfil | E-mail Institucional | Senha (Offline/Fallback) | Acesso |
 |---|---|---|---|
-| **Gestor SisInfra / Admin** | `admin@academico.ufpb.br` | `admin123` | Acesso total a todas as 7 abas |
-| **Operador da Central** | `operador@academico.ufpb.br` | `operador123` | Reservas, Pauta, Checklist e Bloqueios |
-| **Público Geral** | *Sem login* | *Sem login* | Nova Reserva, Calendário e Lista |
+| **👑 Gestor Principal Master** | `hjfd@academico.ufpb.br` | `admin123` | **Acesso Total Master** + Concessão de Acessos e Gestão de Usuários |
+| **👤 Operador da Central** | `operador@academico.ufpb.br` | `operador123` | Reservas, Pauta, Checklist e Bloqueios |
+| **👥 Público Geral** | *Sem login* | *Sem login* | Nova Reserva, Calendário e Lista de Agendamentos |
 
 ---
 

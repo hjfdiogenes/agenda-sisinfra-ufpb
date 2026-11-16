@@ -482,6 +482,22 @@
         </button>
       </div>
 
+      <!-- Card Informativo do Gestor Principal -->
+      <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+        <div class="flex items-start gap-3">
+          <span class="text-2xl">👑</span>
+          <div>
+            <h3 class="font-bold text-xs text-amber-950">Gestor Principal Master: Prof. Dr. Hidelbrando Diógenes (<code class="font-mono text-amber-900 font-bold">hjfd@academico.ufpb.br</code>)</h3>
+            <p class="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+              Possui autoridade exclusiva para conceder acesso ao sistema e cadastrar novos Gestores SisInfra e Operadores com conta Google institucional <strong>@academico.ufpb.br</strong>.
+            </p>
+          </div>
+        </div>
+        <div class="text-[11px] font-semibold text-amber-800 bg-amber-100/70 border border-amber-300 px-3 py-1.5 rounded-lg self-start md:self-auto whitespace-nowrap">
+          Google Workspace @academico.ufpb.br
+        </div>
+      </div>
+
       <!-- Tabela de Usuários -->
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
         <table class="w-full text-left text-xs">
@@ -769,11 +785,32 @@
         <button id="btn-close-login" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
       </div>
 
+      <!-- Botão Google Institucional (@academico.ufpb.br) -->
+      <div class="mb-4">
+        <button id="btn-login-google" type="button" class="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-800 text-xs font-bold py-2.5 px-4 rounded-xl shadow-xs hover:shadow-sm transition-all cursor-pointer">
+          <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Entrar com Google (@academico.ufpb.br)</span>
+        </button>
+        <p class="text-[10px] text-slate-400 text-center mt-1.5">Autenticação unificada com a conta institucional Google da UFPB.</p>
+      </div>
+
+      <!-- Divisor -->
+      <div class="relative flex py-2 items-center mb-3">
+        <div class="flex-grow border-t border-slate-200"></div>
+        <span class="flex-shrink mx-2 text-[10px] uppercase font-bold text-slate-400">ou com e-mail institucional</span>
+        <div class="flex-grow border-t border-slate-200"></div>
+      </div>
+
       <form id="form-login" class="space-y-4">
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">E-mail Institucional (@academico.ufpb.br)</label>
           <input type="text" id="login-email" required placeholder="usuario@academico.ufpb.br" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
-          <p class="text-[10px] text-slate-400 mt-1">Apenas contas institucionais @academico.ufpb.br têm permissão de acesso.</p>
+          <p class="text-[10px] text-slate-400 mt-1">Apenas contas institucionais autorizadas têm acesso.</p>
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">Senha de Acesso</label>
@@ -785,19 +822,35 @@
         </button>
       </form>
 
+      <!-- Card do Gestor Principal -->
+      <div class="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-950 flex items-start gap-2.5">
+        <span class="text-base leading-none">👑</span>
+        <div class="space-y-0.5">
+          <p class="font-bold text-amber-900">Gestor Principal Master:</p>
+          <p class="text-amber-800 leading-relaxed text-[10.5px]">
+            <strong>Prof. Dr. Hidelbrando Diógenes</strong> (<code class="bg-amber-100 px-1 py-0.5 rounded font-mono font-semibold text-amber-900">hjfd@academico.ufpb.br</code>), responsável exclusivo por conceder acesso ao sistema e cadastrar gestores.
+          </p>
+        </div>
+      </div>
+
       <!-- Botões de Demonstração Rápida -->
-      <div class="mt-6 pt-4 border-t border-slate-200">
+      <div class="mt-4 pt-4 border-t border-slate-200">
         <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2 text-center">Atalhos de Acesso Rápido</span>
         <div class="grid grid-cols-2 gap-2">
-          <button id="btn-demo-admin" type="button" class="bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-xs font-semibold p-2 rounded-lg text-center transition-colors">
-            👑 Gestor SisInfra
-            <span class="block text-[10px] text-amber-700 font-normal mt-0.5">Acesso total</span>
+          <button id="btn-demo-admin" type="button" class="bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-xs font-semibold p-2 rounded-lg text-left transition-colors">
+            <span class="font-bold flex items-center gap-1 text-[11px]">👑 Gestor Principal</span>
+            <span class="block text-[9.5px] text-amber-800 font-mono truncate mt-0.5">hjfd@academico.ufpb.br</span>
+            <span class="block text-[9px] text-amber-600 mt-0.5">Acesso Master Total</span>
           </button>
-          <button id="btn-demo-op" type="button" class="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 text-xs font-semibold p-2 rounded-lg text-center transition-colors">
-            👤 Operador
-            <span class="block text-[10px] text-blue-700 font-normal mt-0.5">Reservas e Pauta</span>
+          <button id="btn-demo-op" type="button" class="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 text-xs font-semibold p-2 rounded-lg text-left transition-colors">
+            <span class="font-bold flex items-center gap-1 text-[11px]">👤 Operador</span>
+            <span class="block text-[9.5px] text-blue-800 font-mono truncate mt-0.5">operador@academico.ufpb.br</span>
+            <span class="block text-[9px] text-blue-600 mt-0.5">Reservas e Pauta</span>
           </button>
         </div>
+        <button id="btn-demo-test-unauth" type="button" class="w-full mt-2.5 text-[10.5px] text-slate-500 hover:text-slate-800 hover:underline text-center block">
+          🧪 Testar login de usuário @academico.ufpb.br não autorizado (Solicitar Acesso)
+        </button>
       </div>
     </div>
   </div>
@@ -824,7 +877,10 @@
   <div id="modal-usuario" class="modal-overlay">
     <div class="modal-container p-6 sm:p-8 max-w-lg">
       <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-5">
-        <h3 id="modal-user-title" class="font-bold text-base text-ufpb-blue">Cadastrar Pessoa Autorizada</h3>
+        <div>
+          <h3 id="modal-user-title" class="font-bold text-base text-ufpb-blue">Cadastrar Pessoa Autorizada</h3>
+          <p class="text-[11px] text-slate-500">Concessão de acesso gerenciada pelo Gestor Principal (Prof. Dr. Hidelbrando Diógenes)</p>
+        </div>
         <button id="btn-close-modal-user" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
       </div>
 
@@ -834,9 +890,9 @@
           <input type="text" id="usr-nome" required placeholder="Ex: Maria Clara Souza" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">E-mail Institucional (@academico.ufpb.br) *</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1">E-mail Institucional Google (@academico.ufpb.br) *</label>
           <input type="email" id="usr-email" required placeholder="maria.souza@academico.ufpb.br" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
-          <p class="text-[10px] text-slate-400 mt-1">Obrigatório pertencer ao domínio @academico.ufpb.br</p>
+          <p class="text-[10px] text-slate-400 mt-1">O usuário poderá autenticar diretamente com o botão "Entrar com Google".</p>
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">Setor / Departamento *</label>
@@ -846,13 +902,13 @@
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1">Nível de Acesso *</label>
             <select id="usr-perfil" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
-              <option value="operador">Operador (Criar / Editar reservas)</option>
-              <option value="admin">Administrador Geral (Acesso Total & Checklist)</option>
+              <option value="operador">Operador (Reservas, Pauta e Checklist)</option>
+              <option value="admin">Gestor SisInfra / PRG (Acesso Total & Bloqueios)</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Senha Inicial *</label>
-            <input type="password" id="usr-senha" required placeholder="Mínimo 6 caracteres" minlength="6" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
+            <label class="block text-xs font-bold text-slate-700 mb-1">Senha (Modo Offline / Fallback)</label>
+            <input type="password" id="usr-senha" placeholder="Opcional se usar Google" minlength="6" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
           </div>
         </div>
 
@@ -865,6 +921,49 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ACESSO PENDENTE DE AUTORIZAÇÃO PELO GESTOR PRINCIPAL -->
+  <div id="modal-acesso-pendente" class="modal-overlay">
+    <div class="modal-container p-6 sm:p-8 max-w-lg">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🔒</span>
+          <h3 class="font-bold text-base text-ufpb-blue">Acesso Pendente de Autorização</h3>
+        </div>
+        <button onclick="appManager.closeModal('modal-acesso-pendente')" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
+      </div>
+
+      <div class="space-y-4 text-xs text-slate-700">
+        <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-xl">
+          <p class="font-bold text-amber-900 mb-1">Conta Google Institucional Autenticada:</p>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-mono font-bold text-slate-800 bg-white px-2.5 py-1 rounded border border-amber-300" id="unauth-user-email">usuario@academico.ufpb.br</span>
+          </div>
+          <p class="text-[11px] text-amber-800 mt-2 leading-relaxed">
+            Sua conta pertence ao domínio institucional <strong>@academico.ufpb.br</strong>, porém você ainda <strong>não foi cadastrado como membro autorizado</strong> no sistema Agenda SisInfra.
+          </p>
+        </div>
+
+        <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-2">
+          <div class="font-bold text-slate-800 flex items-center gap-1.5">
+            <span>👑</span> <span>Autorização Exclusiva do Gestor Principal:</span>
+          </div>
+          <p class="text-slate-600 leading-relaxed text-[11px]">
+            Conforme as diretrizes da PRG / UFPB, apenas o <strong>Prof. Dr. Hidelbrando Diógenes</strong> (<a href="mailto:hjfd@academico.ufpb.br" class="text-ufpb-blue font-semibold hover:underline">hjfd@academico.ufpb.br</a>) pode conceder acesso ao sistema e cadastrar novos gestores e operadores.
+          </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-slate-200">
+          <button id="btn-request-access-now" type="button" class="flex-1 bg-ufpb-blue hover:bg-ufpb-navy text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all">
+            <span>✉️</span> <span>Solicitar Acesso ao Prof. Hidelbrando</span>
+          </button>
+          <button type="button" onclick="appManager.closeModal('modal-acesso-pendente')" class="px-4 py-2.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg">
+            Fechar
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

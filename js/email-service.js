@@ -270,6 +270,37 @@ Universidade Federal da Paraíba - João Pessoa / PB
     modal.classList.add("active");
   }
 
+  /**
+   * Prepara e exibe e-mail de solicitação de acesso para o Gestor Principal hjfd@academico.ufpb.br
+   */
+  requestAccessEmail(userEmail, userName = "") {
+    const gestorEmail = "hjfd@academico.ufpb.br";
+    const subject = `[Agenda SisInfra UFPB] Solicitação de Acesso ao Sistema - ${userName || userEmail}`;
+    const dateStr = new Date().toLocaleDateString('pt-BR');
+    
+    const bodyText = `Prezado Prof. Dr. Hidelbrando Diógenes,\nGestor Principal da Agenda SisInfra (PRG / UFPB),\n\nVenho por meio deste solicitar autorização e cadastro como membro autorizado no sistema Agenda SisInfra da Central de Aulas (PRG / UFPB).\n\n📋 DADOS DO SOLICITANTE:\n• Nome: ${userName || "Membro da Equipe"}\n• E-mail Institucional: ${userEmail}\n• Domínio: @academico.ufpb.br (Google Workspace UFPB)\n• Data da Solicitação: ${dateStr}\n\n🎯 PERFIL SOLICITADO:\n[ ] Operador de Reservas (Criar, aprovar e consultar reservas e pauta)\n[ ] Gestor SisInfra / PRG (Acesso gerencial ampliado)\n\nAgradeço antecipadamente pela atenção e aguardo a liberação do acesso.\n\nAtenciosamente,\n${userName || userEmail}`;
+
+    const mailtoUrl = `mailto:${gestorEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${gestorEmail}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+
+    const emailData = {
+      situation: "solicitacao_acesso",
+      statusLabel: "SOLICITAÇÃO DE ACESSO AO GESTOR PRINCIPAL",
+      badgeColor: "bg-amber-100 text-amber-900 border-amber-300",
+      recipient: gestorEmail,
+      recipientName: "Prof. Dr. Hidelbrando Diógenes (Gestor Principal)",
+      subject,
+      bodyText,
+      mailtoUrl,
+      gmailUrl,
+      timestamp: new Date().toISOString()
+    };
+
+    this.currentNotification = emailData;
+    this.showEmailModal(emailData);
+    return emailData;
+  }
+
   copyEmailText() {
     if (!this.currentNotification) return;
     navigator.clipboard.writeText(this.currentNotification.bodyText).then(() => {
