@@ -207,14 +207,18 @@ class AuthService {
       }
     }
 
-    // 2. Modo Demonstração / LocalStorage (GitHub Pages / Offline)
-    return await this.simulateGoogleLogin();
+    // 2. Modo Demonstração / LocalStorage (GitHub Pages / Netlify)
+    // Não entra direto sem pedir a conta: solicita a conta ao usuário
+    return null;
   }
 
   /**
    * Simulação de Login Google Institucional para testes em ambiente estático / offline
    */
-  async simulateGoogleLogin(targetEmail = "hjfd@academico.ufpb.br") {
+  async simulateGoogleLogin(targetEmail) {
+    if (!targetEmail || !targetEmail.trim()) {
+      throw new Error("Informe seu e-mail institucional @academico.ufpb.br para autenticar.");
+    }
     let email = targetEmail.trim().toLowerCase();
 
     if (!email.includes("@")) {

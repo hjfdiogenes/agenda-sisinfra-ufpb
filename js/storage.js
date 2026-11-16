@@ -292,105 +292,8 @@ const SEED_BLOQUEIOS = [
 ];
 
 function getSampleBookings() {
-  const hoje = new Date();
-  const formatData = (offsetDays) => {
-    const d = new Date(hoje);
-    d.setDate(d.getDate() + offsetDays);
-    return d.toISOString().split('T')[0];
-  };
-
-  return [
-    {
-      id: "ag_001",
-      auditorioId: "INFRA2220PRG",
-      titulo: "Seminário de Boas-Vindas aos Ingressantes PRG",
-      tipoEvento: "Palestra / Conferência",
-      solicitante: "Pró-Reitoria de Graduação (PRG)",
-      departamento: "Coordenação de Acompanhamento Acadêmico",
-      email: "prg@ufpb.br",
-      telefone: "(83) 3216-7100",
-      data: formatData(0), // Hoje
-      horaInicio: "09:00",
-      horaFim: "12:00",
-      recursos: ["Datashow / Projetor Laser HD", "Microfones sem Fio (Lapela / Bastão)", "Ar-condicionado Split / Central", "Sistema de Som Embutido / Caixas Ativas"],
-      status: "confirmado",
-      observacoes: "Necessário apoio de técnico de som e microfones no púlpito.",
-      criadoPor: "hjfd@academico.ufpb.br",
-      criadoEm: new Date().toISOString()
-    },
-    {
-      id: "ag_002",
-      auditorioId: "INFRA2289PRG",
-      titulo: "Reunião Geral de Planejamento da Graduação 2026.2",
-      tipoEvento: "Reunião de Colegiado / Gestão",
-      solicitante: "Profa. Dra. Maria do Carmo",
-      departamento: "Coordenação de Currículos Acadêmicos - PRG",
-      email: "colegiado@prg.ufpb.br",
-      telefone: "(83) 3216-7200",
-      data: formatData(0), // Hoje
-      horaInicio: "14:00",
-      horaFim: "16:30",
-      recursos: ["Datashow / Projetor Laser HD", "Conexão HDMI & USB-C para Notebooks", "Ar-condicionado Split / Central"],
-      status: "confirmado",
-      observacoes: "Reunião presencial com coordenadores de curso.",
-      criadoPor: "operador@academico.ufpb.br",
-      criadoEm: new Date().toISOString()
-    },
-    {
-      id: "ag_003",
-      auditorioId: "INFRA2202PRG",
-      titulo: "Colação de Grau Especial - Cursos do CCHLA e CE",
-      tipoEvento: "Colação de Grau / Solenidade",
-      solicitante: "Profa. Dra. Ana Carolina Bezerra",
-      departamento: "Coordenação de Escolaridade e Registro Diplomado - PRG",
-      email: "diplomacao@prg.ufpb.br",
-      telefone: "(83) 3216-7250",
-      data: formatData(1), // Amanhã
-      horaInicio: "14:00",
-      horaFim: "17:30",
-      recursos: ["Datashow / Projetor Laser HD", "Microfones sem Fio (Lapela / Bastão)", "Púlpito / Mesa Diretora", "Ar-condicionado Split / Central"],
-      status: "confirmado",
-      observacoes: "Solenidade no Auditório 2 (120 lugares). Providenciar 6 microfones e cerimonial.",
-      criadoPor: "operador@academico.ufpb.br",
-      criadoEm: new Date().toISOString()
-    },
-    {
-      id: "ag_004",
-      auditorioId: "INFRA2290PRG",
-      titulo: "Alinhamento com Equipe de Atendimento e Matrículas",
-      tipoEvento: "Reunião de Trabalho",
-      solicitante: "Coordenação de Acompanhamento Discente",
-      departamento: "PRG / Secretaria de Atendimento",
-      email: "atendimento@prg.ufpb.br",
-      telefone: "(83) 3216-7150",
-      data: formatData(2), // Daqui a 2 dias
-      horaInicio: "10:00",
-      horaFim: "11:30",
-      recursos: ["Ar-condicionado Split / Central", "Wi-Fi Institucional Eduroam"],
-      status: "confirmado",
-      observacoes: "Reunião da secretaria para fechamento de relatórios.",
-      criadoPor: "operador@academico.ufpb.br",
-      criadoEm: new Date().toISOString()
-    },
-    {
-      id: "ag_005",
-      auditorioId: "INFRA2220PRG",
-      titulo: "Conferência Internacional de Inovação Pedagógica",
-      tipoEvento: "Palestra / Conferência",
-      solicitante: "Pró-Reitoria de Graduação e Reitoria",
-      departamento: "Gabinete da Reitoria",
-      email: "conferencia@academico.ufpb.br",
-      telefone: "(83) 3216-7000",
-      data: formatData(3), // Daqui a 3 dias
-      horaInicio: "19:00",
-      horaFim: "22:00",
-      recursos: ["Datashow / Projetor Laser HD", "Microfones sem Fio (Lapela / Bastão)", "Câmera / Sistema para Transmissão Híbrida", "Púlpito / Mesa Diretora"],
-      status: "pendente",
-      observacoes: "Aguardando confirmação do protocolo e cerimonial.",
-      criadoPor: "operador@academico.ufpb.br",
-      criadoEm: new Date().toISOString()
-    }
-  ];
+  // Agenda limpa por solicitação da gestão
+  return [];
 }
 
 class StorageService {
@@ -412,7 +315,7 @@ class StorageService {
   initLocalStorage() {
     const rawCatalog = window.SISINFRA_SPACES_CATALOG || [];
 
-    // Inicialização e sincronização contínua com o catálogo oficial SisInfra
+    // Inicialização e sincronização contínua com o catálogo oficial SisInfra (Apenas Auditórios, Reunião e Regulação reserváveis)
     const existingSpaces = localStorage.getItem("sisinfra_espacos");
     if (!existingSpaces) {
       localStorage.setItem("sisinfra_espacos", JSON.stringify(rawCatalog));
@@ -422,23 +325,19 @@ class StorageService {
         const mapStored = new Map(stored.map(s => [s.id, s]));
         const merged = rawCatalog.map(catItem => {
           const prev = mapStored.get(catItem.id);
-          if (prev) {
-            // Preserva customizações do checklist feitas pelo usuário
-            let checklist = catItem.checklist;
-            if (Array.isArray(prev.checklist) && prev.checklist.length > 0) {
-              const prevCheckMap = new Map(prev.checklist.map(c => [c.id, c.ativo]));
-              checklist = (catItem.checklist || []).map(item => ({
-                ...item,
-                ativo: prevCheckMap.has(item.id) ? prevCheckMap.get(item.id) : item.ativo
-              }));
-            }
-            return {
-              ...catItem,
-              reservavel: catItem.reservavel === true ? true : (prev.reservavel !== undefined ? prev.reservavel : false),
-              checklist: checklist
-            };
+          let checklist = catItem.checklist;
+          if (prev && Array.isArray(prev.checklist) && prev.checklist.length > 0) {
+            const prevCheckMap = new Map(prev.checklist.map(c => [c.id, c.ativo]));
+            checklist = (catItem.checklist || []).map(item => ({
+              ...item,
+              ativo: prevCheckMap.has(item.id) ? prevCheckMap.get(item.id) : item.ativo
+            }));
           }
-          return catItem;
+          return {
+            ...catItem,
+            reservavel: catItem.reservavel === true, // Define estritamente apenas os permitidos pela gestão
+            checklist: checklist
+          };
         });
         localStorage.setItem("sisinfra_espacos", JSON.stringify(merged));
       } catch (e) {
@@ -489,26 +388,18 @@ class StorageService {
       }
     }
 
-    // Inicialização dos Agendamentos
+    // Inicialização da Agenda Limpa (sem dados fictícios, agenda 100% limpa)
     const existingBookings = localStorage.getItem("prg_agendamentos");
-    if (!existingBookings) {
-      localStorage.setItem("prg_agendamentos", JSON.stringify(getSampleBookings()));
+    if (!existingBookings || existingBookings === "null") {
+      localStorage.setItem("prg_agendamentos", JSON.stringify([]));
     } else {
       try {
         const list = JSON.parse(existingBookings);
-        let updated = false;
-        list.forEach(item => {
-          const norm = this.normalizeSpaceId(item.auditorioId);
-          if (norm !== item.auditorioId) {
-            item.auditorioId = norm;
-            updated = true;
-          }
-        });
-        if (updated) {
-          localStorage.setItem("prg_agendamentos", JSON.stringify(list));
-        }
+        // Limpa quaisquer agendamentos de teste legados (ag_001, etc.)
+        const filtered = list.filter(item => !String(item.id).startsWith("ag_00"));
+        localStorage.setItem("prg_agendamentos", JSON.stringify(filtered));
       } catch (e) {
-        localStorage.setItem("prg_agendamentos", JSON.stringify(getSampleBookings()));
+        localStorage.setItem("prg_agendamentos", JSON.stringify([]));
       }
     }
 
