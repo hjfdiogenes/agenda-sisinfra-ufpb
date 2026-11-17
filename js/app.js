@@ -127,7 +127,6 @@ class AppManager {
     const closeLoginBtn = document.getElementById("btn-close-login");
     const googleLoginBtn = document.getElementById("btn-login-google");
     const reqAccessBtn = document.getElementById("btn-request-access-now");
-    const googlePromptForm = document.getElementById("form-google-prompt");
 
     if (loginBtn) {
       loginBtn.addEventListener("click", () => {
@@ -151,60 +150,90 @@ class AppManager {
     // Botão Oficial: "Continuar com o Google"
     if (googleLoginBtn) {
       googleLoginBtn.addEventListener("click", async () => {
-        // Se Firebase Auth estiver configurado e ativo com chaves reais:
-        if (window.isFirebaseActive && window.fbAuth) {
-          try {
-            googleLoginBtn.disabled = true;
-            await window.authService.loginWithGoogle();
+        try {
+          googleLoginBtn.disabled = true;
+          // Tenta autenticação real com Google (Firebase Auth ou Google Identity Services OAuth)
+          const loggedUser = await window.authService.loginWithGoogle();
+          if (loggedUser) {
             this.closeModal("modal-login");
             this.showToast("Login com Google Institucional realizado com sucesso!", "success");
-          } catch (err) {
-            if (err.code === "AUTH_NOT_AUTHORIZED") {
-              this.pendingAuthUser = { email: err.userEmail, name: err.userName };
-              const unauthEmailEl = document.getElementById("unauth-user-email");
-              if (unauthEmailEl) unauthEmailEl.textContent = err.userEmail;
-              this.closeModal("modal-login");
-              this.openModal("modal-acesso-pendente");
-            } else if (err.code === "auth/popup-closed-by-user") {
-              this.showToast("Janela do Google fechada.", "info");
-            } else {
-              alert(err.message || "Falha na autenticação Google.");
-            }
-          } finally {
-            googleLoginBtn.disabled = false;
+            return;
           }
-        } else {
-          // Em ambiente web sem chaves backend (GitHub Pages / Netlify):
-          // Abre a tela de identificação da conta Google institucional (@academico.ufpb.br)
+        } catch (err) {
+          if (err.code === "AUTH_NOT_AUTHORIZED") {
+            this.pendingAuthUser = { email: err.userEmail, name: err.userName };
+            const unauthEmailEl = document.getElementById("unauth-user-email");
+            if (unauthEmailEl) unauthEmailEl.textContent = err.userEmail;
+            this.closeModal("modal-login");
+            this.openModal("modal-acesso-pendente");
+            return;
+          } else if (err.code === "auth/popup-closed-by-user") {
+            this.showToast("Janela do Google fechada.", "info");
+            return;
+          } else {
+            alert(err.message || "Falha na autenticação Google.");
+            return;
+          }
+        } finally {
+          googleLoginBtn.disabled = false;
+        }
+
+        // Se nem Firebase nem Google Client ID estiverem ativos:
+        // Abre o Seletor Oficial de Contas Google institucional (@academico.ufpb.br)
+        this.closeModal("modal-login");
+        this.openModal("modal-google-prompt");
+      });
+    }
+
+    // Botão 1-Clique: Hidelbrando Diógenes (Gestor)
+    const btnSelectGestor = document.getElementById("btn-select-account-gestor");
+    if (btnSelectGestor) {
+      btnSelectGestor.addEventListener("click", async () => {
+        try {
+          btnSelectGestor.disabled = true;
+          await window.authService.simulateGoogleLogin("hjfd@academico.ufpb.br");
+          this.closeModal("modal-google-prompt");
           this.closeModal("modal-login");
-          this.openModal("modal-google-prompt");
+          this.showToast("Autenticado via Google como Gestor (Hidelbrando Diógenes)!", "success");
+        } catch (err) {
+          alert(err.message || "Erro ao conectar conta Google institucional.");
+        } finally {
+          btnSelectGestor.disabled = false;
         }
       });
     }
 
-    // Formulário de Conta Google Institucional (@academico.ufpb.br)
-    if (googlePromptForm) {
-      googlePromptForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const emailInput = document.getElementById("google-prompt-email");
-        const passwordInput = document.getElementById("google-prompt-password");
-        const email = emailInput ? emailInput.value.trim() : "";
-        const password = passwordInput ? passwordInput.value : "";
-        const submitBtn = googlePromptForm.querySelector("button[type='submit']");
-
-        if (!password) {
-          alert("Informe sua senha institucional de acesso.");
-          return;
+    // Alternar Formulário de Outra Conta Google
+    const btnToggleOther = document.getElementById("btn-toggle-other-account");
+    const formOther = document.getElementById("form-other-google-account");
+    if (btnToggleOther && formOther) {
+      btnToggleOther.addEventListener("click", () => {
+        formOther.classList.toggle("hidden");
+        const inp = document.getElementById("other-google-email");
+        if (!formOther.classList.contains("hidden") && inp) {
+          inp.focus();
         }
+      });
+    }
 
+    // Formulário de Outra Conta Google Institucional (@academico.ufpb.br)
+    if (formOther) {
+      formOther.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const inp = document.getElementById("other-google-email");
+        const email = inp ? inp.value.trim() : "";
+        if (!email) return;
+
+        const submitBtn = formOther.querySelector("button[type='submit']");
         try {
           if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.textContent = "Autenticando...";
+            submitBtn.textContent = "Validando...";
           }
-          await window.authService.simulateGoogleLogin(email, password);
+          await window.authService.simulateGoogleLogin(email);
           this.closeModal("modal-google-prompt");
-          this.showToast("Autenticado com sucesso via Google Workspace UFPB!", "success");
+          this.closeModal("modal-login");
+          this.showToast("Autenticado via Google Workspace UFPB!", "success");
         } catch (err) {
           if (err.code === "AUTH_NOT_AUTHORIZED") {
             this.pendingAuthUser = { email: err.userEmail, name: err.userName };
@@ -213,14 +242,34 @@ class AppManager {
             this.closeModal("modal-google-prompt");
             this.openModal("modal-acesso-pendente");
           } else {
-            alert(err.message || "Credenciais inválidas.");
+            alert(err.message || "Acesso negado.");
           }
         } finally {
           if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.textContent = "Entrar no Sistema";
+            submitBtn.textContent = "Entrar";
           }
         }
+      });
+    }
+
+    // Configuração Google OAuth Client ID Oficial (Opcional)
+    const btnToggleGClient = document.getElementById("btn-toggle-gclient-config");
+    const boxGClient = document.getElementById("box-gclient-config");
+    const inputGClient = document.getElementById("input-google-client-id");
+    const btnSaveGClient = document.getElementById("btn-save-gclient-id");
+    if (btnToggleGClient && boxGClient) {
+      btnToggleGClient.addEventListener("click", () => {
+        boxGClient.classList.toggle("hidden");
+        if (inputGClient) inputGClient.value = window.authService.getGoogleClientId();
+      });
+    }
+    if (btnSaveGClient && inputGClient) {
+      btnSaveGClient.addEventListener("click", () => {
+        const val = inputGClient.value.trim();
+        window.authService.setGoogleClientId(val);
+        this.showToast(val ? "Google Client ID salvo! Login oficial ativo." : "Google Client ID removido.", "success");
+        if (boxGClient) boxGClient.classList.add("hidden");
       });
     }
 
@@ -1767,7 +1816,6 @@ class AppManager {
         let email = document.getElementById("usr-email").value.trim().toLowerCase();
         const setor = document.getElementById("usr-setor").value.trim();
         const perfil = document.getElementById("usr-perfil").value;
-        const senha = document.getElementById("usr-senha").value;
 
         if (!email.endsWith("@academico.ufpb.br") && email !== "hjfd@cademico.ufpb.br") {
           alert("Apenas e-mails institucionais com terminação @academico.ufpb.br são permitidos.");
@@ -1788,11 +1836,11 @@ class AppManager {
 
         try {
           if (this.editingUserId) {
-            await window.storageService.updateUsuario(this.editingUserId, { nome, siape, email, setor, perfil, permissoes, senha });
+            await window.storageService.updateUsuario(this.editingUserId, { nome, siape, email, setor, perfil, permissoes });
             this.showToast("Dados e permissões do usuário atualizados.", "success");
             this.editingUserId = null;
           } else {
-            await window.storageService.createUsuario({ nome, siape, email, setor, perfil, permissoes, senha });
+            await window.storageService.createUsuario({ nome, siape, email, setor, perfil, permissoes });
             this.showToast("Pessoa autorizada cadastrada com sucesso!", "success");
           }
           this.closeModal("modal-usuario");

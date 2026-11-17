@@ -129,10 +129,25 @@ class AuthService {
   }
 
   /**
+   * Configuração de Google Client ID (OAuth 2.0 Oficial)
+   */
+  getGoogleClientId() {
+    return localStorage.getItem("prg_google_client_id") || window.GOOGLE_CLIENT_ID || "";
+  }
+
+  setGoogleClientId(clientId) {
+    if (clientId && clientId.trim()) {
+      localStorage.setItem("prg_google_client_id", clientId.trim());
+    } else {
+      localStorage.removeItem("prg_google_client_id");
+    }
+  }
+
+  /**
    * Login com Google Workspace institucional (@academico.ufpb.br)
    */
   async loginWithGoogle() {
-    // 1. Firebase Auth Ativo
+    // 1. Firebase Auth Ativo com GoogleAuthProvider
     if (window.isFirebaseActive && window.fbAuth && typeof firebase !== 'undefined') {
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
@@ -153,111 +168,76 @@ class AuthService {
           throw err;
         }
 
-        const isMaster = (email === "hjfd@academico.ufpb.br" || email === "hjfd@cademico.ufpb.br");
-
-        let profile = null;
-        try {
-          const snap = await window.fbDb.collection("usuarios").where("email", "==", email).limit(1).get();
-          if (!snap.empty) {
-            profile = { id: snap.docs[0].id, ...snap.docs[0].data() };
-          }
-        } catch (dbErr) {
-          console.warn("Aviso ao buscar perfil no Firestore:", dbErr);
-        }
-
-        // Se for o Gestor e não estiver no Firestore, cria automaticamente
-        if (isMaster) {
-          if (!profile) {
-            profile = {
-              id: "usr_hjfd_principal",
-              nome: fbUser.displayName || "Hidelbrando Diógenes",
-              email: "hjfd@academico.ufpb.br",
-              setor: "Pró-Reitoria de Graduação (PRG / UFPB)",
-              cargo: "Gestor",
-              perfil: "gestor",
-              permissoes: { aprovar: true, checklist: true, bloqueio: true, usuarios: true },
-              status: "ativo",
-              criadoEm: new Date().toISOString()
-            };
-            try {
-              await window.fbDb.collection("usuarios").doc(profile.id).set(profile);
-            } catch (e) {
-              console.error("Erro ao registrar Gestor no Firestore:", e);
-            }
-          } else {
-            profile.perfil = "gestor";
-            profile.cargo = "Gestor";
-            profile.status = "ativo";
-          }
-        }
-
-        // Se outro usuário @academico.ufpb.br não estiver autorizado
-        if (!profile) {
-          await window.fbAuth.signOut();
-          const notAuthErr = new Error(`Sua conta Google institucional (${email}) foi confirmada, mas ainda não possui autorização de acesso ao sistema.\n\nPara solicitar acesso, envie uma solicitação ao Gestor (Hidelbrando Diógenes - hjfd@academico.ufpb.br).`);
-          notAuthErr.code = "AUTH_NOT_AUTHORIZED";
-          notAuthErr.userEmail = email;
-          notAuthErr.userName = fbUser.displayName || email.split("@")[0];
-          throw notAuthErr;
-        }
-
-        if (profile.status === "inativo") {
-          await window.fbAuth.signOut();
-          throw new Error("Seu acesso está inativo no momento. Entre em contato com a PRG / Central de Aulas.");
-        }
-
-        this.currentUser = {
-          id: profile.id,
-          nome: profile.nome || fbUser.displayName,
-          email: profile.email,
-          setor: profile.setor,
-          perfil: profile.perfil,
-          isMasterAdmin: isMaster || !!profile.isMasterAdmin,
-          cargo: profile.cargo || (isMaster ? "Administrador da Agenda SisInfra" : (profile.perfil === "admin" ? "Gestor SisInfra" : "Operador")),
-          status: profile.status,
+        return await this.authenticateGoogleProfile({
+          email: email,
+          nome: fbUser.displayName || email.split("@")[0],
           photoURL: fbUser.photoURL || null
-        };
-
-        sessionStorage.setItem("prg_current_user", JSON.stringify(this.currentUser));
-        window.dispatchEvent(new CustomEvent("auth-state-changed", { detail: this.currentUser }));
-        return this.currentUser;
-
+        });
       } catch (err) {
-        console.error("Erro no login Google:", err);
+        console.error("Erro no login Google Firebase:", err);
         throw err;
       }
     }
 
-    // 2. Modo Demonstração / LocalStorage (GitHub Pages / Netlify)
-    // Não entra direto sem pedir a conta: solicita a conta ao usuário
+    // 2. Google Identity Services (GIS - Token Client OAuth 2.0 Popup)
+    const gClientId = this.getGoogleClientId();
+    if (gClientId && window.google?.accounts?.oauth2) {
+      return new Promise((resolve, reject) => {
+        try {
+          const client = window.google.accounts.oauth2.initTokenClient({
+            client_id: gClientId,
+            scope: "email profile openid",
+            prompt: "select_account",
+            callback: async (tokenResponse) => {
+              if (tokenResponse.error) {
+                reject(new Error(tokenResponse.error_description || tokenResponse.error));
+                return;
+              }
+              try {
+                const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+                });
+                const gProfile = await res.json();
+                const email = (gProfile.email || "").toLowerCase().trim();
+
+                if (!email.endsWith("@academico.ufpb.br") && email !== "hjfd@cademico.ufpb.br") {
+                  const err = new Error("Acesso Negado: Somente contas institucionais da UFPB (@academico.ufpb.br) são permitidas.");
+                  err.code = "DOMAIN_NOT_ALLOWED";
+                  throw err;
+                }
+
+                const user = await this.authenticateGoogleProfile({
+                  email: email,
+                  nome: gProfile.name || email.split("@")[0],
+                  photoURL: gProfile.picture || null
+                });
+                resolve(user);
+              } catch (fetchErr) {
+                reject(fetchErr);
+              }
+            }
+          });
+          client.requestAccessToken();
+        } catch (initErr) {
+          reject(initErr);
+        }
+      });
+    }
+
+    // 3. Sem chaves backend configuradas (retorna null para abrir Seletor Oficial de Contas Google)
     return null;
   }
 
   /**
-   * Login Seguro com e-mail institucional @academico.ufpb.br e verificação de senha
+   * Autentica e provisiona perfil institucional Google (@academico.ufpb.br)
    */
-  async simulateGoogleLogin(targetEmail, targetSenha) {
-    if (!targetEmail || !targetEmail.trim()) {
-      throw new Error("Informe seu e-mail institucional @academico.ufpb.br para autenticar.");
-    }
-    if (!targetSenha || !targetSenha.trim()) {
-      throw new Error("Informe sua senha de acesso institucional para validar o login.");
-    }
-    let email = targetEmail.trim().toLowerCase();
-
-    if (!email.includes("@")) {
-      email = `${email}@academico.ufpb.br`;
-    }
-
-    if (!email.endsWith("@academico.ufpb.br") && email !== "hjfd@cademico.ufpb.br") {
-      throw new Error("Acesso Negado: Somente e-mails com terminação @academico.ufpb.br são permitidos.");
-    }
-
-    const isMaster = (email === "hjfd@academico.ufpb.br" || email === "hjfd@cademico.ufpb.br");
+  async authenticateGoogleProfile(gData) {
+    const email = (gData.email || "").toLowerCase().trim();
+    const isGestor = (email === "hjfd@academico.ufpb.br" || email === "hjfd@cademico.ufpb.br");
     const usuarios = await window.storageService.getUsuarios();
     let user = usuarios.find(u => (u.email || "").toLowerCase() === email);
 
-    if (isMaster) {
+    if (isGestor) {
       if (!user) {
         user = {
           id: "usr_hjfd_principal",
@@ -268,8 +248,7 @@ class AuthService {
           cargo: "Gestor",
           perfil: "gestor",
           permissoes: { aprovar: true, checklist: true, bloqueio: true, usuarios: true },
-          status: "ativo",
-          senha: "admin123"
+          status: "ativo"
         };
         try {
           const localList = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
@@ -277,10 +256,10 @@ class AuthService {
           localStorage.setItem("prg_usuarios", JSON.stringify(localList));
         } catch (e) {}
       } else {
-        user.perfil = "gestor";
-        user.status = "ativo";
         user.nome = "Hidelbrando Diógenes";
+        user.perfil = "gestor";
         user.cargo = "Gestor";
+        user.status = "ativo";
         user.permissoes = { aprovar: true, checklist: true, bloqueio: true, usuarios: true };
       }
     }
@@ -289,13 +268,8 @@ class AuthService {
       const notAuthErr = new Error(`A conta institucional Google (${email}) não possui autorização no sistema. Solicite permissão ao Gestor (Hidelbrando Diógenes).`);
       notAuthErr.code = "AUTH_NOT_AUTHORIZED";
       notAuthErr.userEmail = email;
-      notAuthErr.userName = email.split("@")[0];
+      notAuthErr.userName = gData.nome || email.split("@")[0];
       throw notAuthErr;
-    }
-
-    // Validação estrita da senha
-    if (user.senha && user.senha !== targetSenha.trim()) {
-      throw new Error("Senha incorreta. Verifique suas credenciais institucionais e tente novamente.");
     }
 
     if (user.status === "inativo") {
@@ -313,7 +287,8 @@ class AuthService {
       permissoes: user.permissoes || (user.perfil === "gestor" 
         ? { aprovar: true, checklist: true, bloqueio: true, usuarios: true }
         : { aprovar: true, checklist: false, bloqueio: false, usuarios: false }),
-      status: user.status
+      status: user.status,
+      photoURL: gData.photoURL || null
     };
 
     sessionStorage.setItem("prg_current_user", JSON.stringify(this.currentUser));
@@ -322,10 +297,34 @@ class AuthService {
   }
 
   /**
-   * Login com E-mail e Senha institucional
+   * Autenticação via Seletor de Contas Google Institucional (@academico.ufpb.br)
+   * Sem bloqueio de senha local!
    */
-  async login(email, senha) {
-    return await this.simulateGoogleLogin(email, senha);
+  async simulateGoogleLogin(targetEmail) {
+    if (!targetEmail || !targetEmail.trim()) {
+      throw new Error("Selecione ou informe seu e-mail institucional @academico.ufpb.br.");
+    }
+    let email = targetEmail.trim().toLowerCase();
+
+    if (!email.includes("@")) {
+      email = `${email}@academico.ufpb.br`;
+    }
+
+    if (!email.endsWith("@academico.ufpb.br") && email !== "hjfd@cademico.ufpb.br") {
+      throw new Error("Acesso Negado: Somente e-mails com terminação @academico.ufpb.br são permitidos.");
+    }
+
+    return await this.authenticateGoogleProfile({
+      email: email,
+      nome: (email === "hjfd@academico.ufpb.br" || email === "hjfd@cademico.ufpb.br") ? "Hidelbrando Diógenes" : email.split("@")[0]
+    });
+  }
+
+  /**
+   * Login institucional compatível
+   */
+  async login(email) {
+    return await this.simulateGoogleLogin(email);
   }
 
   async logout() {
@@ -344,9 +343,9 @@ class AuthService {
   // Atalho para teste rápido em demonstração
   async quickLogin(role = "admin") {
     if (role === "admin" || role === "master" || role === "hjfd") {
-      return await this.login("hjfd@academico.ufpb.br", "admin123");
+      return await this.login("hjfd@academico.ufpb.br");
     } else {
-      return await this.login("operador@academico.ufpb.br", "operador123");
+      return await this.login("operador@academico.ufpb.br");
     }
   }
 

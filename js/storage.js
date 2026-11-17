@@ -420,10 +420,10 @@ class StorageService {
     }
 
     // Inicialização da Agenda 100% Limpa (limpa todos os agendamentos fictícios/mock)
-    const cleanAgendaV5 = localStorage.getItem("prg_clean_agenda_v5");
-    if (!cleanAgendaV5) {
+    const cleanAgendaV6 = localStorage.getItem("prg_clean_agenda_v6");
+    if (!cleanAgendaV6) {
       localStorage.setItem("prg_agendamentos", JSON.stringify([]));
-      localStorage.setItem("prg_clean_agenda_v5", "true");
+      localStorage.setItem("prg_clean_agenda_v6", "true");
     } else {
       try {
         const list = JSON.parse(localStorage.getItem("prg_agendamentos") || "[]");
