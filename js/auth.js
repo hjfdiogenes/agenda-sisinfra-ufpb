@@ -104,6 +104,8 @@ class AuthService {
     const usuarios = await window.storageService.getUsuarios();
     let user = usuarios.find(u => String(u.siape || "").replace(/\D/g, "") === siape);
 
+    const isCloud = !!(window.isFirebaseActive && window.fbDb);
+
     // Auto-recuperação do Gestor Único se for o SIAPE 1046483
     if (siape === "1046483") {
       const gestorCustomPwd = localStorage.getItem("prg_pwd_1046483");
@@ -118,8 +120,8 @@ class AuthService {
           perfil: "gestor",
           permissoes: { aprovar: true, checklist: true, bloqueio: true, usuarios: true },
           status: "ativo",
-          senha: gestorCustomPwd || "ufpb123",
-          primeiroAcesso: !gestorCustomPwd
+          senha: (!isCloud && gestorCustomPwd) ? gestorCustomPwd : "ufpb123",
+          primeiroAcesso: !(!isCloud && gestorCustomPwd)
         };
         try {
           const list = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
@@ -132,7 +134,7 @@ class AuthService {
         user.nome = "Hidelbrando Diógenes";
         user.status = "ativo";
         user.permissoes = { aprovar: true, checklist: true, bloqueio: true, usuarios: true };
-        if (gestorCustomPwd) {
+        if (!isCloud && gestorCustomPwd) {
           user.senha = gestorCustomPwd;
           user.primeiroAcesso = false;
         }
@@ -153,8 +155,8 @@ class AuthService {
           perfil: "usuario",
           permissoes: { aprovar: true, checklist: true, bloqueio: false, usuarios: false },
           status: "ativo",
-          senha: alvaroCustomPwd || "ufpb123",
-          primeiroAcesso: !alvaroCustomPwd
+          senha: (!isCloud && alvaroCustomPwd) ? alvaroCustomPwd : "ufpb123",
+          primeiroAcesso: !(!isCloud && alvaroCustomPwd)
         };
         try {
           const list = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
@@ -166,7 +168,7 @@ class AuthService {
         user.cargo = "Usuário";
         user.nome = user.nome || "Álvaro";
         user.status = "ativo";
-        if (alvaroCustomPwd) {
+        if (!isCloud && alvaroCustomPwd) {
           user.senha = alvaroCustomPwd;
           user.primeiroAcesso = false;
         }
@@ -181,16 +183,28 @@ class AuthService {
       throw new Error("Seu acesso está inativo no momento. Entre em contato com o Gestor (Hidelbrando Diógenes).");
     }
 
-    // Validação Estrita da Senha (com persistência isolada por matrícula SIAPE)
+    // Validação Estrita da Senha (sincronizada em nuvem quando Firebase está ativo)
     const savedCustomPwd = localStorage.getItem("prg_pwd_" + siape);
-    const expectedPwd = savedCustomPwd || user.senha || "ufpb123";
+    let expectedPwd = "ufpb123";
+
+    if (isCloud && user.senha) {
+      expectedPwd = user.senha;
+      if (user.primeiroAcesso === false && user.senha !== "ufpb123") {
+        localStorage.setItem("prg_pwd_" + siape, user.senha);
+      } else if (user.primeiroAcesso === true && user.senha === "ufpb123") {
+        localStorage.removeItem("prg_pwd_" + siape);
+      }
+    } else {
+      expectedPwd = savedCustomPwd || user.senha || "ufpb123";
+    }
 
     if (senha !== expectedPwd) {
       throw new Error("Senha incorreta. Verifique suas credenciais e tente novamente.");
     }
 
-    const hasCustomPwd = !!savedCustomPwd;
-    const isFirstAccess = !hasCustomPwd && (user.primeiroAcesso !== false || user.senha === "ufpb123");
+    const isFirstAccess = isCloud
+      ? (user.primeiroAcesso === true || expectedPwd === "ufpb123")
+      : (!savedCustomPwd && (user.primeiroAcesso !== false || expectedPwd === "ufpb123"));
 
     // Configuração do Usuário Autenticado
     this.currentUser = {

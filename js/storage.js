@@ -508,16 +508,27 @@ class StorageService {
 
   // ================= ESPAÇOS SISINFRA & CHECKLIST =================
   async getEspacos() {
+    const rawCatalog = window.SISINFRA_SPACES_CATALOG || [];
+
     if (window.isFirebaseActive && window.fbDb) {
       try {
         const snap = await window.fbDb.collection("sisinfra_espacos").get();
         if (!snap.empty) {
-          return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        }
-        // Se vazio no Firestore, carrega catálogo padrão
-        const rawCatalog = window.SISINFRA_SPACES_CATALOG || [];
-        for (const sp of rawCatalog) {
-          await window.fbDb.collection("sisinfra_espacos").doc(sp.id).set(sp);
+          const cloudMap = new Map();
+          snap.docs.forEach(doc => cloudMap.set(doc.id, { id: doc.id, ...doc.data() }));
+
+          // Mescla alterações do Firestore (checklists e reserváveis) mantendo catálogo oficial atualizado
+          const merged = rawCatalog.map(catItem => {
+            const cloud = cloudMap.get(catItem.id);
+            if (!cloud) return catItem;
+            return {
+              ...catItem,
+              checklist: Array.isArray(cloud.checklist) && cloud.checklist.length > 0 ? cloud.checklist : catItem.checklist,
+              reservavel: catItem.reservavel === true || cloud.reservavel === true
+            };
+          });
+          localStorage.setItem("sisinfra_espacos", JSON.stringify(merged));
+          return merged;
         }
         return rawCatalog;
       } catch (err) {
@@ -533,7 +544,7 @@ class StorageService {
         console.error("Erro ao parsear espaços locais:", e);
       }
     }
-    return window.SISINFRA_SPACES_CATALOG || [];
+    return rawCatalog;
   }
 
   async getEspacosReservaveis() {
@@ -613,15 +624,49 @@ class StorageService {
   }
 
   // ================= AGENDAMENTOS =================
+  subscribeAgendamentos(callback) {
+    if (window.isFirebaseActive && window.fbDb && typeof callback === "function") {
+      try {
+        return window.fbDb.collection("agendamentos").onSnapshot(
+          (snap) => {
+            const list = snap.docs
+              .map(doc => {
+                const item = { id: doc.id, ...doc.data() };
+                item.auditorioId = this.normalizeSpaceId(item.auditorioId);
+                return item;
+              })
+              .sort((a, b) => String(a.data || "").localeCompare(String(b.data || "")) || String(a.horaInicio || "").localeCompare(String(b.horaInicio || "")));
+            try {
+              localStorage.setItem("prg_agendamentos", JSON.stringify(list));
+            } catch (e) {}
+            callback(list);
+          },
+          (err) => {
+            console.warn("Aviso no listener em tempo real de agendamentos:", err);
+          }
+        );
+      } catch (e) {
+        console.warn("Erro ao registrar listener Firestore:", e);
+      }
+    }
+    return null;
+  }
+
   async getAgendamentos() {
     if (window.isFirebaseActive && window.fbDb) {
       try {
-        const snap = await window.fbDb.collection("agendamentos").orderBy("data").get();
-        return snap.docs.map(doc => {
-          const item = { id: doc.id, ...doc.data() };
-          item.auditorioId = this.normalizeSpaceId(item.auditorioId);
-          return item;
-        });
+        const snap = await window.fbDb.collection("agendamentos").get();
+        const cloudList = snap.docs
+          .map(doc => {
+            const item = { id: doc.id, ...doc.data() };
+            item.auditorioId = this.normalizeSpaceId(item.auditorioId);
+            return item;
+          })
+          .sort((a, b) => String(a.data || "").localeCompare(String(b.data || "")) || String(a.horaInicio || "").localeCompare(String(b.horaInicio || "")));
+        try {
+          localStorage.setItem("prg_agendamentos", JSON.stringify(cloudList));
+        } catch (e) {}
+        return cloudList;
       } catch (err) {
         console.error("Erro ao buscar agendamentos no Firestore:", err);
       }
@@ -703,7 +748,7 @@ class StorageService {
       throw new Error(`Conflito de Horário! ${espacoNome} já está ocupado das ${conflito.horaInicio} às ${conflito.horaFim} pelo evento: "${conflito.titulo}".`);
     }
 
-    const id = "ag_" + Date.now();
+    const id = "ag_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
     const novoAgendamento = {
       id,
       ...data,
@@ -731,8 +776,7 @@ class StorageService {
   }
 
   async updateAgendamento(id, data) {
-    const list = JSON.parse(localStorage.getItem("prg_agendamentos") || "[]");
-    const existing = list.find(ag => ag.id === id);
+    const existing = await this.getAgendamentoById(id);
     if (!existing) {
       throw new Error("Agendamento não encontrado.");
     }
@@ -763,19 +807,21 @@ class StorageService {
 
     if (window.isFirebaseActive && window.fbDb) {
       try {
-        await window.fbDb.collection("agendamentos").doc(id).update(merged);
+        await window.fbDb.collection("agendamentos").doc(id).set(merged, { merge: true });
       } catch (err) {
         console.error("Erro ao atualizar no Firestore:", err);
       }
     }
 
+    const list = JSON.parse(localStorage.getItem("prg_agendamentos") || "[]");
     const idx = list.findIndex(ag => ag.id === id);
     if (idx >= 0) {
       list[idx] = merged;
-      localStorage.setItem("prg_agendamentos", JSON.stringify(list));
-      return list[idx];
+    } else {
+      list.push(merged);
     }
-    return null;
+    localStorage.setItem("prg_agendamentos", JSON.stringify(list));
+    return merged;
   }
 
   /**
@@ -846,11 +892,26 @@ class StorageService {
       try {
         const snap = await window.fbDb.collection("usuarios").get();
         if (!snap.empty) {
-          return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          const cloudUsers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          // Garante que o Gestor (1046483) e Álvaro (1349975) existam no Firestore
+          for (const seed of SEED_USUARIOS) {
+            const exists = cloudUsers.some(u => String(u.siape || "").replace(/\D/g, "") === seed.siape);
+            if (!exists) {
+              await window.fbDb.collection("usuarios").doc(seed.id).set(seed);
+              cloudUsers.push(seed);
+            }
+          }
+          try {
+            localStorage.setItem("prg_usuarios", JSON.stringify(cloudUsers));
+          } catch (e) {}
+          return cloudUsers;
         }
         for (const u of SEED_USUARIOS) {
           await window.fbDb.collection("usuarios").doc(u.id).set(u);
         }
+        try {
+          localStorage.setItem("prg_usuarios", JSON.stringify(SEED_USUARIOS));
+        } catch (e) {}
         return SEED_USUARIOS;
       } catch (err) {
         console.error("Erro ao buscar usuários no Firestore:", err);
@@ -927,13 +988,13 @@ class StorageService {
   }
 
   async updateUsuario(id, data) {
-    const list = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
+    const list = await this.getUsuarios();
     const target = list.find(u => u.id === id);
 
     // Proteção ao Gestor Permanente
     if (target) {
       const em = (target.email || "").toLowerCase();
-      if (em === "hjfd@academico.ufpb.br" || em === "hjfd@cademico.ufpb.br") {
+      if (String(target.siape || "").replace(/\D/g, "") === "1046483" || em === "hjfd@academico.ufpb.br" || em === "hjfd@cademico.ufpb.br") {
         if (data.status === "inativo") {
           throw new Error("O Gestor permanente (Hidelbrando Diógenes) não pode ser desativado.");
         }
@@ -951,9 +1012,11 @@ class StorageService {
       updatedData.cargo = "Usuário";
     }
 
+    const mergedUser = target ? { ...target, ...updatedData } : { id, ...updatedData };
+
     if (window.isFirebaseActive && window.fbDb) {
       try {
-        await window.fbDb.collection("usuarios").doc(id).update(updatedData);
+        await window.fbDb.collection("usuarios").doc(id).set(mergedUser, { merge: true });
       } catch (err) {
         console.error("Erro ao atualizar usuário no Firestore:", err);
       }
@@ -961,21 +1024,22 @@ class StorageService {
 
     const idx = list.findIndex(u => u.id === id);
     if (idx >= 0) {
-      list[idx] = { ...list[idx], ...updatedData };
-      localStorage.setItem("prg_usuarios", JSON.stringify(list));
-      return list[idx];
+      list[idx] = mergedUser;
+    } else {
+      list.push(mergedUser);
     }
-    return null;
+    localStorage.setItem("prg_usuarios", JSON.stringify(list));
+    return mergedUser;
   }
 
   async deleteUsuario(id) {
-    const list = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
+    const list = await this.getUsuarios();
     const target = list.find(u => u.id === id);
 
     // Proteção ao Gestor Permanente
     if (target) {
       const em = (target.email || "").toLowerCase();
-      if (em === "hjfd@academico.ufpb.br" || em === "hjfd@cademico.ufpb.br") {
+      if (String(target.siape || "").replace(/\D/g, "") === "1046483" || em === "hjfd@academico.ufpb.br" || em === "hjfd@cademico.ufpb.br") {
         throw new Error("Ação não permitida: O Gestor permanente (Hidelbrando Diógenes) não pode ser excluído.");
       }
     }
@@ -1005,35 +1069,35 @@ class StorageService {
       localStorage.setItem("prg_pwd_" + cleanSiape, cleanPwd);
     }
 
-    const list = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
-    let found = false;
+    const list = await this.getUsuarios();
+    let matchedDocs = [];
     list.forEach(u => {
       const uSiape = String(u.siape || "").replace(/\D/g, "");
       if (u.id === clean || (cleanSiape && uSiape === cleanSiape)) {
         u.senha = cleanPwd;
         u.primeiroAcesso = false;
-        found = true;
+        matchedDocs.push(u);
         if (uSiape) {
           localStorage.setItem("prg_pwd_" + uSiape, cleanPwd);
         }
       }
     });
 
-    if (found) {
+    if (matchedDocs.length > 0) {
       localStorage.setItem("prg_usuarios", JSON.stringify(list));
     }
 
     if (window.isFirebaseActive && window.fbDb) {
-      try {
-        const target = list.find(u => u.id === clean || (cleanSiape && String(u.siape).replace(/\D/g, "") === cleanSiape));
-        if (target) {
-          await window.fbDb.collection("usuarios").doc(target.id).update({
+      for (const target of matchedDocs) {
+        try {
+          await window.fbDb.collection("usuarios").doc(target.id).set({
+            ...target,
             senha: cleanPwd,
             primeiroAcesso: false
-          });
+          }, { merge: true });
+        } catch (e) {
+          console.warn("Aviso ao salvar nova senha no Firestore:", e);
         }
-      } catch (e) {
-        console.warn("Aviso ao salvar nova senha no Firestore:", e);
       }
     }
 
@@ -1093,22 +1157,27 @@ class StorageService {
   }
 
   async updateBloqueio(id, data) {
+    const list = await this.getBloqueios();
+    const idx = list.findIndex(b => b.id === id);
+    const merged = idx >= 0
+      ? { ...list[idx], ...data, atualizadoEm: new Date().toISOString() }
+      : { id, ...data, atualizadoEm: new Date().toISOString() };
+
     if (window.isFirebaseActive && window.fbDb) {
       try {
-        await window.fbDb.collection("bloqueios").doc(id).update(data);
+        await window.fbDb.collection("bloqueios").doc(id).set(merged, { merge: true });
       } catch (err) {
         console.error("Erro ao atualizar bloqueio no Firestore:", err);
       }
     }
 
-    const list = await this.getBloqueios();
-    const idx = list.findIndex(b => b.id === id);
     if (idx >= 0) {
-      list[idx] = { ...list[idx], ...data, atualizadoEm: new Date().toISOString() };
-      localStorage.setItem("prg_bloqueios", JSON.stringify(list));
-      return list[idx];
+      list[idx] = merged;
+    } else {
+      list.push(merged);
     }
-    return null;
+    localStorage.setItem("prg_bloqueios", JSON.stringify(list));
+    return merged;
   }
 
   async toggleBloqueioAtivo(id, novoEstado) {
@@ -1161,10 +1230,16 @@ class StorageService {
       if (b.tipoEspaco === "todos_espacos") {
         afeta = true;
       } else if (b.tipoEspaco === "todas_salas") {
-        // Afeta salas de aula e laboratórios didáticos da Central de Aulas
+        // Afeta salas de aula e laboratórios didáticos da Central de Aulas (exceto Auditórios, Reunião e Autorregulação)
         const isClassroom = espaco.tipo === "Sala de Aula" || (espaco.bloco && espaco.bloco.includes("Bloco "));
-        const isAuditorio = (espaco.nome && espaco.nome.includes("AUDITÓRIO")) || targetId === "INFRA2220PRG" || targetId === "INFRA2202PRG";
-        if (isClassroom && !isAuditorio) {
+        const isEspacoEspecial = (
+          (espaco.nome && (espaco.nome.includes("AUDITÓRIO") || espaco.nome.includes("AUTORREGULAÇÃO") || espaco.nome.includes("REUNIÃO"))) ||
+          targetId === "INFRA2220PRG" ||
+          targetId === "INFRA2202PRG" ||
+          targetId === "INFRA2289PRG" ||
+          targetId === "INFRA_AUTORREGULACAO_PRG"
+        );
+        if (isClassroom && !isEspacoEspecial) {
           afeta = true;
         }
       } else if (b.tipoEspaco === "bloco") {

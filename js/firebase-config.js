@@ -13,12 +13,13 @@
  */
 
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY_AQUI",
-  authDomain: "seu-projeto-prg.firebaseapp.com",
-  projectId: "seu-projeto-prg",
-  storageBucket: "seu-projeto-prg.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdef1234567890"
+  apiKey: "AIzaSyBE_g7gE6GW5ifP7jfYwjASfeUZAUrNd-8",
+  authDomain: "agenda-sisinfra-ufpb.firebaseapp.com",
+  projectId: "agenda-sisinfra-ufpb",
+  storageBucket: "agenda-sisinfra-ufpb.firebasestorage.app",
+  messagingSenderId: "97983625913",
+  appId: "1:97983625913:web:d3c2b0516789ed50b7f968",
+  measurementId: "G-QP58FKRVTG"
 };
 
 // Verifica se há configuração salva no localStorage pelo Gestor

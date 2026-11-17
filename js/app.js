@@ -53,6 +53,20 @@ class AppManager {
       await this.renderBloqueiosList();
       if (window.calendarManager) await window.calendarManager.render();
     });
+
+    // Sincronização em tempo real com Cloud Firestore (atualiza automaticamente entre todos os usuários)
+    if (window.storageService && typeof window.storageService.subscribeAgendamentos === "function") {
+      let isFirstSnapshot = true;
+      window.storageService.subscribeAgendamentos(async () => {
+        if (isFirstSnapshot) {
+          isFirstSnapshot = false;
+          return;
+        }
+        await this.renderAgendamentosTable();
+        await this.renderPautaDoDia();
+        if (window.calendarManager) await window.calendarManager.render();
+      });
+    }
   }
 
   // ================= NAVEGAÇÃO ENTRE ABAS =================
