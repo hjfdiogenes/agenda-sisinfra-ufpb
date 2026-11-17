@@ -6,6 +6,148 @@
 
 const SISINFRA_SPACES_CATALOG = [
   {
+    "id": "INFRA_AUTORREGULACAO_PRG",
+    "idInterno": "INFRA_AUTORREGULACAO_PRG",
+    "codigoMec": "Sem código MEC",
+    "tipo": "Espaço de Acolhimento e Autorregulação",
+    "nome": "PRG - SALA DE AUTORREGULAÇÃO",
+    "nomeAmigavel": "Sala de Autorregulação",
+    "capacidade": 10,
+    "tipoCapacidade": "Total",
+    "utilizacao": "Acolhimento, Convivência e Autorregulação",
+    "area": 0,
+    "areaFormatada": "Sem metragem indicada",
+    "complemento": "SALA DE AUTORREGULAÇÃO - PRG",
+    "bloco": "Prédio da Reitoria / PRG",
+    "descricao": "Espaço de Acolhimento e Autorregulação da PRG (sem metragem indicada no SisInfra). Ambiente preparado para apoio, convivência e autorregulação acadêmica.",
+    "statusMec": "Não listada no SisInfra oficial",
+    "acessibilidadeSisinfra": "Possui Acessibilidade e Atende às Demandas",
+    "climatizacaoSisinfra": "Possui Climatização e Atende às Demandas",
+    "manutencaoSisinfra": "Preventiva",
+    "multimidiaSisinfra": "Possui Recursos Multimídia / Atendem às Demandas",
+    "dataCadastro": "17/11/2026",
+    "ultimaAtualizacao": "17/11/2026",
+    "reservavel": true,
+    "cor": "#059669",
+    "corClara": "#ecfdf5",
+    "badge": "bg-emerald-600",
+    "badgeLight": "bg-emerald-100 text-emerald-900 border-emerald-700",
+    "checklist": [
+      {
+        "id": "datashow",
+        "label": "Datashow / Projetor Laser HD",
+        "icon": "📽️",
+        "ativo": false,
+        "categoria": "multimidia"
+      },
+      {
+        "id": "tela_projecao",
+        "label": "Tela de Projeção Retrátil / Fixa",
+        "icon": "🖥️",
+        "ativo": false,
+        "categoria": "multimidia"
+      },
+      {
+        "id": "som",
+        "label": "Sistema de Som Embutido / Caixas Ativas",
+        "icon": "🔊",
+        "ativo": false,
+        "categoria": "audio"
+      },
+      {
+        "id": "microfone",
+        "label": "Microfones sem Fio (Lapela / Bastão)",
+        "icon": "🎤",
+        "ativo": false,
+        "categoria": "audio"
+      },
+      {
+        "id": "computador",
+        "label": "Computador do Docente / Ponto de Rede",
+        "icon": "💻",
+        "ativo": true,
+        "categoria": "informatica"
+      },
+      {
+        "id": "hdmi",
+        "label": "Conexão HDMI & USB-C para Notebooks",
+        "icon": "🔌",
+        "ativo": false,
+        "categoria": "multimidia"
+      },
+      {
+        "id": "climatizacao",
+        "label": "Ar-condicionado Split / Central",
+        "icon": "❄️",
+        "ativo": true,
+        "categoria": "conforto"
+      },
+      {
+        "id": "quadro_branco",
+        "label": "Quadro Branco Magnético",
+        "icon": "🖊️",
+        "ativo": true,
+        "categoria": "didatico"
+      },
+      {
+        "id": "quadro_verde",
+        "label": "Quadro Verde Tradicional (Giz)",
+        "icon": "🟩",
+        "ativo": false,
+        "categoria": "didatico"
+      },
+      {
+        "id": "quadro_vidro",
+        "label": "Lousa de Vidro Temperado",
+        "icon": "🪟",
+        "ativo": false,
+        "categoria": "didatico"
+      },
+      {
+        "id": "pulpito",
+        "label": "Púlpito / Mesa Diretora",
+        "icon": "🪑",
+        "ativo": false,
+        "categoria": "mobiliario"
+      },
+      {
+        "id": "acessibilidade",
+        "label": "Acessibilidade PCD (Rampa / Espaço Cadeirante)",
+        "icon": "♿",
+        "ativo": true,
+        "categoria": "acessibilidade"
+      },
+      {
+        "id": "wifi",
+        "label": "Wi-Fi Institucional Eduroam",
+        "icon": "📶",
+        "ativo": true,
+        "categoria": "conectividade"
+      },
+      {
+        "id": "tomadas",
+        "label": "Tomadas Elétricas para Notebooks / Alunos",
+        "icon": "⚡",
+        "ativo": true,
+        "categoria": "eletrica"
+      },
+      {
+        "id": "blackout",
+        "label": "Cortinas com Vedação / Blackout",
+        "icon": "🪟",
+        "ativo": true,
+        "categoria": "conforto"
+      },
+      {
+        "id": "webcam",
+        "label": "Câmera / Sistema para Transmissão Híbrida",
+        "icon": "📹",
+        "ativo": false,
+        "categoria": "multimidia"
+      }
+    ]
+  },
+  {
     "id": "INFRA2195PRG",
     "idInterno": "INFRA2195PRG",
     "codigoMec": "950355",
@@ -1139,7 +1281,7 @@ const SISINFRA_SPACES_CATALOG = [
     "codigoMec": "950379",
     "tipo": "Auditório / Centro de Convenções / Anfiteatro",
     "nome": "PRG - AUDITÓRIO 1",
-    "nomeAmigavel": "Auditório 1 (Auditório Principal)",
+    "nomeAmigavel": "Auditório 1",
     "capacidade": 110,
     "tipoCapacidade": "Por Turno",
     "utilizacao": "Compartilhamento entre curso presencial, a distância e semipresencial",
@@ -1280,7 +1422,7 @@ const SISINFRA_SPACES_CATALOG = [
     "codigoMec": "950361",
     "tipo": "Outras Instalações",
     "nome": "PRG - AUDITÓRIO 2",
-    "nomeAmigavel": "Auditório 2 (Auditório B)",
+    "nomeAmigavel": "Auditório 2",
     "capacidade": 120,
     "tipoCapacidade": "Total",
     "utilizacao": "Exclusivamente para Curso Presencial",
@@ -13139,7 +13281,7 @@ const SISINFRA_SPACES_CATALOG = [
     "multimidiaSisinfra": "",
     "dataCadastro": "09/09/2026",
     "ultimaAtualizacao": "Sem atualização",
-    "reservavel": true,
+    "reservavel": false,
     "cor": "#dc2626",
     "corClara": "#fef2f2",
     "badge": "bg-rose-600",
@@ -13265,7 +13407,7 @@ const SISINFRA_SPACES_CATALOG = [
     "codigoMec": "950446",
     "tipo": "Espaço Para Atividade Administrativa",
     "nome": "PRG - SALA DE REUNIÃO",
-    "nomeAmigavel": "Sala de Reunião da PRG (Sala Principal)",
+    "nomeAmigavel": "Sala de Reuniões da PRG",
     "capacidade": 50,
     "tipoCapacidade": "Total",
     "utilizacao": "Compartilhamento entre curso presencial, a distância e semipresencial",
@@ -13421,7 +13563,7 @@ const SISINFRA_SPACES_CATALOG = [
     "multimidiaSisinfra": "",
     "dataCadastro": "09/09/2026",
     "ultimaAtualizacao": "Sem atualização",
-    "reservavel": true,
+    "reservavel": false,
     "cor": "#d97706",
     "corClara": "#fffbeb",
     "badge": "bg-amber-600",

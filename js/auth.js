@@ -2,7 +2,7 @@
  * SISTEMA DE AGENDAMENTO DE AUDITÓRIOS - CENTRAL DE AULAS (PRG / UFPB)
  * Serviço de Autenticação e Controle de Acesso (RBAC)
  * Autenticação via Google Workspace (@academico.ufpb.br)
- * Gestor Principal: Prof. Dr. Hidelbrando Diógenes (hjfd@academico.ufpb.br)
+ * Administrador: Hidelbrando Diógenes (hjfd@academico.ufpb.br)
  */
 
 class AuthService {
@@ -43,10 +43,10 @@ class AuthService {
               // Master Admin auto-provision
               this.currentUser = {
                 id: "usr_hjfd_principal",
-                nome: user.displayName || "Prof. Dr. Hidelbrando Diógenes",
+                nome: user.displayName || "Hidelbrando Diógenes",
                 email: "hjfd@academico.ufpb.br",
                 setor: "Pró-Reitoria de Graduação (PRG / UFPB)",
-                cargo: "Gestor Principal da Agenda SisInfra",
+                cargo: "Administrador da Agenda SisInfra",
                 perfil: "admin",
                 isMasterAdmin: true,
                 status: "ativo"
@@ -72,35 +72,56 @@ class AuthService {
     return !!this.currentUser;
   }
 
-  isMasterAdmin(user = this.currentUser) {
+  isGestor(user = this.currentUser) {
     if (!user) return false;
     const email = (user.email || "").toLowerCase().trim();
-    return (
-      user.isMasterAdmin === true ||
-      email === "hjfd@academico.ufpb.br" ||
-      email === "hjfd@cademico.ufpb.br"
-    );
+    if (email === "hjfd@academico.ufpb.br" || email === "hjfd@cademico.ufpb.br") return true;
+    return user.perfil === "gestor" || user.perfil === "admin";
+  }
+
+  isUsuario(user = this.currentUser) {
+    if (!user) return false;
+    return user.perfil === "usuario" || user.perfil === "operador" || this.isGestor(user);
+  }
+
+  // Compatibilidade com código legado
+  isMasterAdmin(user = this.currentUser) {
+    return this.isGestor(user);
   }
 
   isAdmin(user = this.currentUser) {
-    if (!user) return false;
-    return this.isMasterAdmin(user) || user.perfil === "admin";
+    return this.isGestor(user);
   }
 
   isOperator(user = this.currentUser) {
-    if (!user) return false;
-    return user.perfil === "operador" || this.isAdmin(user);
+    return this.isUsuario(user);
   }
 
-  canEditBooking(booking) {
-    if (!this.isLoggedIn()) return false;
-    if (this.isAdmin()) return true;
-    if (this.isOperator()) return true;
-    return false;
+  hasPermission(permissionName, user = this.currentUser) {
+    if (!user) return false;
+    if (this.isGestor(user)) return true;
+    return !!(user.permissoes && user.permissoes[permissionName]);
+  }
+
+  canApprove(user = this.currentUser) {
+    return this.hasPermission("aprovar", user);
+  }
+
+  canManageChecklist(user = this.currentUser) {
+    return this.hasPermission("checklist", user);
+  }
+
+  canManageBlocks(user = this.currentUser) {
+    return this.hasPermission("bloqueio", user);
   }
 
   canManageUsers(user = this.currentUser) {
-    return this.isAdmin(user);
+    return this.hasPermission("usuarios", user) || this.isGestor(user);
+  }
+
+  canEditBooking(booking, user = this.currentUser) {
+    if (!this.isLoggedIn()) return false;
+    return this.canApprove(user);
   }
 
   canAssignAdminRole(user = this.currentUser) {
@@ -144,28 +165,28 @@ class AuthService {
           console.warn("Aviso ao buscar perfil no Firestore:", dbErr);
         }
 
-        // Se for o Gestor Principal e não estiver no Firestore, cria automaticamente
+        // Se for o Gestor e não estiver no Firestore, cria automaticamente
         if (isMaster) {
           if (!profile) {
             profile = {
               id: "usr_hjfd_principal",
-              nome: fbUser.displayName || "Prof. Dr. Hidelbrando Diógenes",
+              nome: fbUser.displayName || "Hidelbrando Diógenes",
               email: "hjfd@academico.ufpb.br",
               setor: "Pró-Reitoria de Graduação (PRG / UFPB)",
-              cargo: "Gestor Principal da Agenda SisInfra",
-              perfil: "admin",
-              isMasterAdmin: true,
+              cargo: "Gestor",
+              perfil: "gestor",
+              permissoes: { aprovar: true, checklist: true, bloqueio: true, usuarios: true },
               status: "ativo",
               criadoEm: new Date().toISOString()
             };
             try {
               await window.fbDb.collection("usuarios").doc(profile.id).set(profile);
             } catch (e) {
-              console.error("Erro ao registrar Gestor Principal no Firestore:", e);
+              console.error("Erro ao registrar Gestor no Firestore:", e);
             }
           } else {
-            profile.isMasterAdmin = true;
-            profile.perfil = "admin";
+            profile.perfil = "gestor";
+            profile.cargo = "Gestor";
             profile.status = "ativo";
           }
         }
@@ -173,7 +194,7 @@ class AuthService {
         // Se outro usuário @academico.ufpb.br não estiver autorizado
         if (!profile) {
           await window.fbAuth.signOut();
-          const notAuthErr = new Error(`Sua conta Google institucional (${email}) foi confirmada, mas ainda não possui autorização de acesso ao sistema.\n\nPara solicitar acesso, envie uma solicitação ao Gestor Principal (Prof. Dr. Hidelbrando Diógenes - hjfd@academico.ufpb.br).`);
+          const notAuthErr = new Error(`Sua conta Google institucional (${email}) foi confirmada, mas ainda não possui autorização de acesso ao sistema.\n\nPara solicitar acesso, envie uma solicitação ao Gestor (Hidelbrando Diógenes - hjfd@academico.ufpb.br).`);
           notAuthErr.code = "AUTH_NOT_AUTHORIZED";
           notAuthErr.userEmail = email;
           notAuthErr.userName = fbUser.displayName || email.split("@")[0];
@@ -192,7 +213,7 @@ class AuthService {
           setor: profile.setor,
           perfil: profile.perfil,
           isMasterAdmin: isMaster || !!profile.isMasterAdmin,
-          cargo: profile.cargo || (isMaster ? "Gestor Principal da Agenda SisInfra" : (profile.perfil === "admin" ? "Gestor SisInfra" : "Operador")),
+          cargo: profile.cargo || (isMaster ? "Administrador da Agenda SisInfra" : (profile.perfil === "admin" ? "Gestor SisInfra" : "Operador")),
           status: profile.status,
           photoURL: fbUser.photoURL || null
         };
@@ -213,11 +234,14 @@ class AuthService {
   }
 
   /**
-   * Simulação de Login Google Institucional para testes em ambiente estático / offline
+   * Login Seguro com e-mail institucional @academico.ufpb.br e verificação de senha
    */
-  async simulateGoogleLogin(targetEmail) {
+  async simulateGoogleLogin(targetEmail, targetSenha) {
     if (!targetEmail || !targetEmail.trim()) {
       throw new Error("Informe seu e-mail institucional @academico.ufpb.br para autenticar.");
+    }
+    if (!targetSenha || !targetSenha.trim()) {
+      throw new Error("Informe sua senha de acesso institucional para validar o login.");
     }
     let email = targetEmail.trim().toLowerCase();
 
@@ -230,7 +254,6 @@ class AuthService {
     }
 
     const isMaster = (email === "hjfd@academico.ufpb.br" || email === "hjfd@cademico.ufpb.br");
-
     const usuarios = await window.storageService.getUsuarios();
     let user = usuarios.find(u => (u.email || "").toLowerCase() === email);
 
@@ -238,13 +261,15 @@ class AuthService {
       if (!user) {
         user = {
           id: "usr_hjfd_principal",
-          nome: "Prof. Dr. Hidelbrando Diógenes",
+          nome: "Hidelbrando Diógenes",
+          siape: "1234567",
           email: "hjfd@academico.ufpb.br",
           setor: "Pró-Reitoria de Graduação (PRG / UFPB)",
-          cargo: "Gestor Principal da Agenda SisInfra",
-          perfil: "admin",
-          isMasterAdmin: true,
-          status: "ativo"
+          cargo: "Gestor",
+          perfil: "gestor",
+          permissoes: { aprovar: true, checklist: true, bloqueio: true, usuarios: true },
+          status: "ativo",
+          senha: "admin123"
         };
         try {
           const localList = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
@@ -252,32 +277,42 @@ class AuthService {
           localStorage.setItem("prg_usuarios", JSON.stringify(localList));
         } catch (e) {}
       } else {
-        user.isMasterAdmin = true;
-        user.perfil = "admin";
+        user.perfil = "gestor";
         user.status = "ativo";
+        user.nome = "Hidelbrando Diógenes";
+        user.cargo = "Gestor";
+        user.permissoes = { aprovar: true, checklist: true, bloqueio: true, usuarios: true };
       }
     }
 
     if (!user) {
-      const notAuthErr = new Error(`A conta institucional Google (${email}) é válida, mas você ainda não possui autorização no sistema. Solicite permissão ao Gestor Principal (Prof. Dr. Hidelbrando Diógenes).`);
+      const notAuthErr = new Error(`A conta institucional Google (${email}) não possui autorização no sistema. Solicite permissão ao Gestor (Hidelbrando Diógenes).`);
       notAuthErr.code = "AUTH_NOT_AUTHORIZED";
       notAuthErr.userEmail = email;
       notAuthErr.userName = email.split("@")[0];
       throw notAuthErr;
     }
 
+    // Validação estrita da senha
+    if (user.senha && user.senha !== targetSenha.trim()) {
+      throw new Error("Senha incorreta. Verifique suas credenciais institucionais e tente novamente.");
+    }
+
     if (user.status === "inativo") {
-      throw new Error("Seu acesso está inativo no momento. Procure o Gestor Principal ou a PRG.");
+      throw new Error("Seu acesso está inativo no momento. Entre em contato com o Gestor ou a PRG.");
     }
 
     this.currentUser = {
       id: user.id,
       nome: user.nome,
+      siape: user.siape,
       email: user.email,
       setor: user.setor,
-      perfil: user.perfil,
-      isMasterAdmin: isMaster || !!user.isMasterAdmin,
-      cargo: user.cargo || (isMaster ? "Gestor Principal da Agenda SisInfra" : (user.perfil === "admin" ? "Gestor SisInfra" : "Operador")),
+      perfil: user.perfil === "gestor" ? "gestor" : "usuario",
+      cargo: user.perfil === "gestor" ? "Gestor" : "Usuário",
+      permissoes: user.permissoes || (user.perfil === "gestor" 
+        ? { aprovar: true, checklist: true, bloqueio: true, usuarios: true }
+        : { aprovar: true, checklist: false, bloqueio: false, usuarios: false }),
       status: user.status
     };
 
@@ -290,93 +325,7 @@ class AuthService {
    * Login com E-mail e Senha institucional
    */
   async login(email, senha) {
-    email = email.trim().toLowerCase();
-
-    // Se o usuário digitou apenas o prefixo (sem @), completa automaticamente com @academico.ufpb.br
-    if (!email.includes("@")) {
-      email = `${email}@academico.ufpb.br`;
-    }
-
-    if (!email.endsWith("@academico.ufpb.br") && email !== "hjfd@cademico.ufpb.br") {
-      throw new Error("Acesso restrito! O login deve ser realizado com uma conta do domínio institucional @academico.ufpb.br.");
-    }
-
-    const isMaster = (email === "hjfd@academico.ufpb.br" || email === "hjfd@cademico.ufpb.br");
-
-    // 1. Tenta login no Firebase se ativo
-    if (window.isFirebaseActive && window.fbAuth) {
-      try {
-        const userCred = await window.fbAuth.signInWithEmailAndPassword(email, senha);
-        const snap = await window.fbDb.collection("usuarios").where("email", "==", email).limit(1).get();
-        if (!snap.empty) {
-          const profile = { id: snap.docs[0].id, ...snap.docs[0].data() };
-          if (profile.status === "inativo") {
-            await window.fbAuth.signOut();
-            throw new Error("Seu acesso foi desativado pela coordenação da Central de Aulas.");
-          }
-          this.currentUser = {
-            ...profile,
-            isMasterAdmin: isMaster || !!profile.isMasterAdmin
-          };
-          sessionStorage.setItem("prg_current_user", JSON.stringify(this.currentUser));
-          window.dispatchEvent(new CustomEvent("auth-state-changed", { detail: this.currentUser }));
-          return this.currentUser;
-        }
-      } catch (firebaseErr) {
-        console.warn("Falha no login do Firebase:", firebaseErr);
-        throw new Error(this.translateFirebaseError(firebaseErr.code) || firebaseErr.message);
-      }
-    }
-
-    // 2. Fallback / Modo Demonstração (LocalStorage)
-    const usuarios = await window.storageService.getUsuarios();
-    let user = usuarios.find(u => (u.email || "").toLowerCase() === email);
-
-    if (isMaster && !user) {
-      user = {
-        id: "usr_hjfd_principal",
-        nome: "Prof. Dr. Hidelbrando Diógenes",
-        email: "hjfd@academico.ufpb.br",
-        setor: "Pró-Reitoria de Graduação (PRG / UFPB)",
-        cargo: "Gestor Principal da Agenda SisInfra",
-        perfil: "admin",
-        isMasterAdmin: true,
-        status: "ativo",
-        senha: "admin123"
-      };
-      try {
-        const localList = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
-        localList.unshift(user);
-        localStorage.setItem("prg_usuarios", JSON.stringify(localList));
-      } catch (e) {}
-    }
-
-    if (!user) {
-      throw new Error("Usuário não autorizado. Para ter acesso liberado, solicite cadastro ao Gestor Principal (Prof. Dr. Hidelbrando Diógenes - hjfd@academico.ufpb.br).");
-    }
-
-    if (user.senha && user.senha !== senha) {
-      throw new Error("Senha incorreta. Tente novamente.");
-    }
-
-    if (user.status === "inativo") {
-      throw new Error("Seu acesso está inativo no momento. Procure o Gestor Principal ou a PRG.");
-    }
-
-    this.currentUser = {
-      id: user.id,
-      nome: user.nome,
-      email: user.email,
-      setor: user.setor,
-      perfil: user.perfil,
-      isMasterAdmin: isMaster || !!user.isMasterAdmin,
-      cargo: user.cargo || (isMaster ? "Gestor Principal da Agenda SisInfra" : (user.perfil === "admin" ? "Gestor SisInfra" : "Operador")),
-      status: user.status
-    };
-
-    sessionStorage.setItem("prg_current_user", JSON.stringify(this.currentUser));
-    window.dispatchEvent(new CustomEvent("auth-state-changed", { detail: this.currentUser }));
-    return this.currentUser;
+    return await this.simulateGoogleLogin(email, senha);
   }
 
   async logout() {

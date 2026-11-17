@@ -187,15 +187,22 @@ class AppManager {
       googlePromptForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const emailInput = document.getElementById("google-prompt-email");
+        const passwordInput = document.getElementById("google-prompt-password");
         const email = emailInput ? emailInput.value.trim() : "";
+        const password = passwordInput ? passwordInput.value : "";
         const submitBtn = googlePromptForm.querySelector("button[type='submit']");
+
+        if (!password) {
+          alert("Informe sua senha institucional de acesso.");
+          return;
+        }
 
         try {
           if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.textContent = "Verificando...";
+            submitBtn.textContent = "Autenticando...";
           }
-          await window.authService.simulateGoogleLogin(email);
+          await window.authService.simulateGoogleLogin(email, password);
           this.closeModal("modal-google-prompt");
           this.showToast("Autenticado com sucesso via Google Workspace UFPB!", "success");
         } catch (err) {
@@ -206,18 +213,18 @@ class AppManager {
             this.closeModal("modal-google-prompt");
             this.openModal("modal-acesso-pendente");
           } else {
-            alert(err.message);
+            alert(err.message || "Credenciais inválidas.");
           }
         } finally {
           if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.textContent = "Avançar";
+            submitBtn.textContent = "Entrar no Sistema";
           }
         }
       });
     }
 
-    // Botão de Solicitar Acesso por E-mail ao Gestor Principal
+    // Botão de Solicitar Acesso por E-mail ao Gestor
     if (reqAccessBtn) {
       reqAccessBtn.addEventListener("click", () => {
         const pEmail = this.pendingAuthUser?.email || "usuario@academico.ufpb.br";
@@ -230,9 +237,8 @@ class AppManager {
 
   updateAuthUI() {
     const isLogged = window.authService.isLoggedIn();
-    const isMaster = window.authService.isMasterAdmin();
-    const isAdmin = window.authService.isAdmin();
     const user = window.authService.getCurrentUser();
+    const isGestor = window.authService.isGestor();
 
     const loggedContainer = document.getElementById("user-logged-container");
     const unloggedContainer = document.getElementById("user-unlogged-container");
@@ -252,30 +258,42 @@ class AppManager {
       if (userNameEl) userNameEl.textContent = user.nome;
 
       if (userBadgeEl) {
-        if (isMaster) {
-          userBadgeEl.textContent = "👑 Gestor Principal Master";
-          userBadgeEl.className = "text-[11px] px-2.5 py-0.5 rounded-full font-extrabold bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-xs border border-amber-600";
-        } else if (isAdmin) {
-          userBadgeEl.textContent = "Gestor SisInfra / PRG";
-          userBadgeEl.className = "text-[11px] px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-300";
+        if (isGestor) {
+          userBadgeEl.textContent = "Gestor";
+          userBadgeEl.className = "text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-blue-100 text-blue-900 border border-blue-300";
         } else {
-          userBadgeEl.textContent = "Operador Autorizado";
-          userBadgeEl.className = "text-[11px] px-2 py-0.5 rounded-full font-bold bg-blue-100 text-blue-800 border border-blue-300";
+          userBadgeEl.textContent = "Usuário";
+          userBadgeEl.className = "text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-slate-100 text-slate-800 border border-slate-300";
         }
       }
 
-      // Para equipe autorizada: exibe Pauta Diária, Infraestrutura e Bloqueios
+      // Pauta Diária: visível para todos os membros autenticados
       if (tabPautaBtn) tabPautaBtn.classList.remove("hidden");
-      if (tabAuditoriosBtn) tabAuditoriosBtn.classList.remove("hidden");
-      if (tabBloqueiosBtn) tabBloqueiosBtn.classList.remove("hidden");
 
-      // Gestão de Pessoas Autorizadas: apenas Gestores / Admins
+      // Infraestrutura & Checklist: visível se possuir permissão 'checklist' ou for Gestor
+      if (tabAuditoriosBtn) {
+        if (window.authService.canManageChecklist()) tabAuditoriosBtn.classList.remove("hidden");
+        else tabAuditoriosBtn.classList.add("hidden");
+      }
+
+      // Bloqueios de Salas: visível se possuir permissão 'bloqueio' ou for Gestor
+      if (tabBloqueiosBtn) {
+        if (window.authService.canManageBlocks()) tabBloqueiosBtn.classList.remove("hidden");
+        else tabBloqueiosBtn.classList.add("hidden");
+      }
+
+      // Gestão de Pessoas Autorizadas: visível se possuir permissão 'usuarios' ou for Gestor
       if (tabUsuariosBtn) {
-        if (isAdmin) tabUsuariosBtn.classList.remove("hidden");
+        if (window.authService.canManageUsers()) tabUsuariosBtn.classList.remove("hidden");
         else tabUsuariosBtn.classList.add("hidden");
       }
 
       if (authAlertBooking) authAlertBooking.classList.add("hidden");
+
+      // Se estiver numa aba que perdeu permissão, redireciona
+      if (this.currentTab === "auditorios" && !window.authService.canManageChecklist()) this.switchTab("novo");
+      if (this.currentTab === "bloqueios" && !window.authService.canManageBlocks()) this.switchTab("novo");
+      if (this.currentTab === "usuarios" && !window.authService.canManageUsers()) this.switchTab("novo");
     } else {
       // Para o público em geral: somente Nova Reserva, Calendário e Lista de Agendamentos
       if (loggedContainer) loggedContainer.classList.add("hidden");
@@ -440,6 +458,8 @@ class AppManager {
       const titulo = document.getElementById("ag-titulo").value.trim();
       const tipoEvento = document.getElementById("ag-tipo").value;
       const solicitante = document.getElementById("ag-solicitante").value.trim();
+      const vinculo = document.getElementById("ag-vinculo") ? document.getElementById("ag-vinculo").value : "";
+      const siape = document.getElementById("ag-siape") ? document.getElementById("ag-siape").value.trim() : "";
       const departamento = document.getElementById("ag-departamento").value.trim();
       const email = document.getElementById("ag-email").value.trim();
       const telefone = document.getElementById("ag-telefone").value.trim();
@@ -447,6 +467,16 @@ class AppManager {
       const horaInicio = document.getElementById("ag-inicio").value;
       const horaFim = document.getElementById("ag-fim").value;
       const observacoes = document.getElementById("ag-obs") ? document.getElementById("ag-obs").value.trim() : "";
+
+      if (!vinculo) {
+        alert("Por favor, selecione seu vínculo institucional na UFPB (Docente ou Técnico-Administrativo).");
+        return;
+      }
+
+      if (!siape || !/^[0-9]{5,8}$/.test(siape)) {
+        alert("Matrícula SIAPE obrigatória e inválida! Apenas servidores docentes ou técnicos podem solicitar reservas (digite entre 5 e 8 números).");
+        return;
+      }
 
       const recursos = [];
       form.querySelectorAll("input[name='recursos']:checked").forEach(cb => {
@@ -458,16 +488,18 @@ class AppManager {
         return;
       }
 
-      const isAuthorized = window.authService.isOperator();
+      const isAuthorized = window.authService.canApprove();
       const status = isAuthorized ? "confirmado" : "pendente";
       const user = window.authService.getCurrentUser();
-      const criadoPor = user ? `${user.nome} (${user.email})` : `${solicitante} [Solicitação Externa]`;
+      const criadoPor = user ? `${user.nome} (${user.email})` : `${solicitante} [Servidor UFPB SIAPE ${siape}]`;
 
       const bookingData = {
         auditorioId,
         titulo,
         tipoEvento,
         solicitante,
+        vinculo,
+        siape,
         departamento,
         email,
         telefone,
@@ -619,7 +651,8 @@ class AppManager {
       return;
     }
 
-    const canManage = window.authService.isOperator();
+    const canManage = window.authService.isUsuario();
+    const canApprove = window.authService.canApprove();
 
     tbody.innerHTML = filtered.map(ag => {
       const normId = window.storageService.normalizeSpaceId(ag.auditorioId);
@@ -632,6 +665,8 @@ class AppManager {
         badgeStatus = `<span class="badge-confirmado text-xs font-bold px-2.5 py-0.5 rounded-full">Confirmado</span>`;
       } else if (ag.status === "pendente") {
         badgeStatus = `<span class="badge-pendente text-xs font-bold px-2.5 py-0.5 rounded-full">Pendente</span>`;
+      } else if (ag.status === "pendente_informacoes") {
+        badgeStatus = `<span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">Complementação</span>`;
       } else if (ag.status === "rejeitado") {
         badgeStatus = `<span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300">Negado</span>`;
       } else {
@@ -655,14 +690,20 @@ class AppManager {
             <div class="text-xs text-slate-500">${this.escapeHtml(ag.tipoEvento || "")}</div>
           </td>
           <td class="py-3 px-4">
-            <div class="text-xs font-semibold text-slate-700">${this.escapeHtml(ag.solicitante)}</div>
-            <div class="text-[11px] text-slate-500">${this.escapeHtml(ag.departamento || "")}</div>
+            <div class="text-xs font-bold text-slate-800">${this.escapeHtml(ag.solicitante)}</div>
+            <div class="text-[11px] text-slate-600 font-mono">SIAPE: <strong>${this.escapeHtml(ag.siape || "—")}</strong></div>
+            <div class="text-[10px] text-slate-400">${this.escapeHtml(ag.vinculo || ag.departamento || "")}</div>
           </td>
           <td class="py-3 px-4">${badgeStatus}</td>
           <td class="py-3 px-4 text-right whitespace-nowrap">
             <button onclick="appManager.openBookingDetails('${ag.id}')" class="text-xs text-blue-700 hover:text-blue-900 font-semibold px-2 py-1 bg-blue-50 rounded hover:bg-blue-100 mr-1" title="Ver detalhes">
               Ver
             </button>
+            ${canApprove && (ag.status === 'pendente' || ag.status === 'pendente_informacoes') ? `
+              <button onclick="appManager.openAnaliseModal('${ag.id}')" class="text-xs text-emerald-800 font-bold px-2 py-1 bg-emerald-50 rounded hover:bg-emerald-100 border border-emerald-200 mr-1" title="Conferir recursos disponíveis e aprovar reserva">
+                Analisar
+              </button>
+            ` : ""}
             ${canManage ? `
               <button onclick="appManager.startEditBooking('${ag.id}')" class="text-xs text-amber-700 hover:text-amber-900 font-semibold px-2 py-1 bg-amber-50 rounded hover:bg-amber-100 mr-1" title="Editar">
                 Editar
@@ -697,6 +738,8 @@ class AppManager {
       statusHtml = `<span class="badge-confirmado text-xs font-bold px-2.5 py-0.5 rounded-full">Confirmado</span>`;
     } else if (ag.status === "pendente") {
       statusHtml = `<span class="badge-pendente text-xs font-bold px-2.5 py-0.5 rounded-full">Pendente de Aprovação</span>`;
+    } else if (ag.status === "pendente_informacoes") {
+      statusHtml = `<span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">Aguardando Complementação</span>`;
     } else if (ag.status === "rejeitado") {
       statusHtml = `<span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300">Negado / Recusado</span>`;
     } else {
@@ -726,6 +769,29 @@ class AppManager {
             </div>
             <p class="text-xs text-rose-900 leading-relaxed font-semibold">Justificativa da Gestão: "${this.escapeHtml(ag.motivoRejeicao || 'Não informada.')}"</p>
             ${ag.rejeitadoEm ? `<div class="text-[10px] text-rose-700 mt-1">Registrado em ${new Date(ag.rejeitadoEm).toLocaleString('pt-BR')} por ${this.escapeHtml(ag.rejeitadoPor || '')}</div>` : ''}
+          </div>
+        ` : ''}
+
+        ${ag.solicitacaoComplementacao ? `
+          <div class="bg-amber-50 border border-amber-300 p-3.5 rounded-xl text-amber-950">
+            <div class="flex items-center gap-1.5 font-bold mb-1 text-amber-900">
+              <span class="text-base">📝</span> <span>Ação Necessária: Complementação de Informações Solicitada</span>
+            </div>
+            <p class="text-xs text-amber-900 leading-relaxed font-semibold">Pendências apontadas pelo Gestor: "${this.escapeHtml(ag.solicitacaoComplementacao.texto || '')}"</p>
+            ${ag.solicitacaoComplementacao.data ? `<div class="text-[10px] text-amber-700 mt-1">Registrado em ${new Date(ag.solicitacaoComplementacao.data).toLocaleString('pt-BR')} por ${this.escapeHtml(ag.solicitacaoComplementacao.solicitadoPor || 'Gestor')}</div>` : ''}
+          </div>
+        ` : ''}
+
+        ${Array.isArray(ag.recursosConfirmados) && ag.recursosConfirmados.length > 0 ? `
+          <div class="bg-emerald-50 border border-emerald-300 p-3.5 rounded-xl text-emerald-950">
+            <div class="flex items-center gap-1.5 font-bold mb-1 text-emerald-900">
+              <span class="text-base">✓</span> <span>Recursos e Equipamentos Validados pelo Gestor:</span>
+            </div>
+            <div class="flex flex-wrap gap-1.5 mb-1.5">
+              ${ag.recursosConfirmados.map(r => `<span class="bg-white border border-emerald-300 text-emerald-900 text-[11px] px-2 py-0.5 rounded font-semibold">✓ ${this.escapeHtml(r)}</span>`).join(" ")}
+            </div>
+            ${ag.parecerGestor ? `<p class="text-xs text-emerald-900 italic">"${this.escapeHtml(ag.parecerGestor)}"</p>` : ''}
+            ${ag.confirmadoEm ? `<div class="text-[10px] text-emerald-700 mt-1">Validado em ${new Date(ag.confirmadoEm).toLocaleString('pt-BR')} por ${this.escapeHtml(ag.confirmadoPor || 'Gestor')}</div>` : ''}
           </div>
         ` : ''}
 
@@ -764,9 +830,11 @@ class AppManager {
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
-            <span class="text-slate-400 block font-semibold mb-1">Solicitante:</span>
-            <div class="font-bold text-slate-800">${this.escapeHtml(ag.solicitante)}</div>
-            <div class="text-slate-500 text-[11px]">${this.escapeHtml(ag.departamento || "")}</div>
+            <span class="text-slate-400 block font-semibold mb-1">Servidor Solicitante (UFPB):</span>
+            <div class="font-bold text-slate-800 text-sm">${this.escapeHtml(ag.solicitante)}</div>
+            <div class="text-slate-600 text-xs mt-0.5">Vínculo: <strong>${this.escapeHtml(ag.vinculo || "Docente / Técnico")}</strong></div>
+            <div class="text-slate-600 text-xs font-mono">Matrícula SIAPE: <strong>${this.escapeHtml(ag.siape || "—")}</strong></div>
+            <div class="text-slate-500 text-[11px] mt-0.5">${this.escapeHtml(ag.departamento || "")}</div>
           </div>
           <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
             <span class="text-slate-400 block font-semibold mb-1">Contato do Interessado:</span>
@@ -807,8 +875,9 @@ class AppManager {
       </div>
     `;
 
-    const canManage = window.authService.isOperator();
-    const isAdmin = window.authService.isAdmin();
+    const canApprove = window.authService.canApprove();
+    const canManage = window.authService.isUsuario();
+    const isGestor = window.authService.isGestor();
 
     if (actions) {
       actions.innerHTML = `
@@ -820,11 +889,14 @@ class AppManager {
           ✉️ <span>Notificação por E-mail</span>
         </button>
 
-        ${canManage && ag.status === 'pendente' ? `
-          <button onclick="appManager.approveBooking('${ag.id}')" class="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg flex items-center gap-1 shadow-sm transition-colors">
-            <span>✓</span> <span>Aprovar Reserva</span>
+        ${canApprove && (ag.status === 'pendente' || ag.status === 'pendente_informacoes') ? `
+          <button onclick="appManager.openAnaliseModal('${ag.id}')" class="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg flex items-center gap-1.5 shadow-sm transition-colors" title="Conferir o que está realmente disponível na sala e confirmar">
+            <span>📋</span> <span>Conferir Recursos & Confirmar</span>
           </button>
-          <button onclick="appManager.openRejectBookingModal('${ag.id}')" class="px-3.5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg flex items-center gap-1 shadow-sm transition-colors">
+          <button onclick="appManager.openComplementacaoModal('${ag.id}')" class="px-3.5 py-2 text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-lg flex items-center gap-1.5 transition-colors" title="Solicitar complementação de dados ao interessado">
+            <span>📝</span> <span>Solicitar Complementação</span>
+          </button>
+          <button onclick="appManager.openRejectBookingModal('${ag.id}')" class="px-3.5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg flex items-center gap-1 shadow-sm transition-colors" title="Negar com justificativa">
             <span>✕</span> <span>Negar Reserva</span>
           </button>
         ` : ""}
@@ -835,7 +907,7 @@ class AppManager {
           </button>
         ` : ""}
 
-        ${isAdmin ? `
+        ${isGestor ? `
           <button onclick="appManager.deleteBooking('${ag.id}')" class="px-3 py-2 text-xs font-bold text-red-700 bg-red-100 hover:bg-red-200 rounded-lg ml-auto transition-colors">
             Excluir Registro
           </button>
@@ -864,6 +936,8 @@ class AppManager {
     document.getElementById("ag-titulo").value = ag.titulo;
     document.getElementById("ag-tipo").value = ag.tipoEvento || "Outro";
     document.getElementById("ag-solicitante").value = ag.solicitante;
+    if (document.getElementById("ag-vinculo")) document.getElementById("ag-vinculo").value = ag.vinculo || "";
+    if (document.getElementById("ag-siape")) document.getElementById("ag-siape").value = ag.siape || "";
     document.getElementById("ag-departamento").value = ag.departamento || "";
     document.getElementById("ag-email").value = ag.email;
     document.getElementById("ag-telefone").value = ag.telefone || "";
@@ -882,28 +956,173 @@ class AppManager {
     if (cancelBtn) cancelBtn.classList.remove("hidden");
   }
 
-  async approveBooking(id) {
+  // ================= ANÁLISE E CONFIRMAÇÃO DE RECURSOS PELO GESTOR =================
+  async openAnaliseModal(id) {
     const ag = await window.storageService.getAgendamentoById(id);
     if (!ag) return;
+    this.currentAnaliseBookingId = id;
+
     const space = await window.storageService.getEspacoById(ag.auditorioId);
+    const spaceName = space ? (space.nomeAmigavel || space.nome) : ag.auditorioId;
 
-    const updated = await window.storageService.updateAgendamento(id, { 
-      status: "confirmado",
-      aprovadoEm: new Date().toISOString(),
-      aprovadoPor: window.authService.getCurrentUser()?.email || "gestor@academico.ufpb.br"
-    });
-
-    this.showToast("Agendamento aprovado com sucesso!", "success");
-    this.closeModal("modal-booking-details");
-
-    // Dispara notificação de aprovação por e-mail para o interessado
-    if (window.emailService) {
-      await window.emailService.notify("reserva_aprovada", updated, { space });
+    const resumoEl = document.getElementById("analise-resumo-container");
+    if (resumoEl) {
+      resumoEl.innerHTML = `
+        <div class="flex items-center justify-between">
+          <strong class="text-slate-900 text-sm">${this.escapeHtml(ag.titulo)}</strong>
+          <span class="font-mono text-[11px] text-slate-500">#${ag.id}</span>
+        </div>
+        <div class="text-slate-600 text-xs mt-1">
+          Espaço: <strong class="text-ufpb-blue">${this.escapeHtml(spaceName)}</strong> • Data: <strong>${ag.data}</strong> (${ag.horaInicio} às ${ag.horaFim})
+        </div>
+        <div class="text-slate-600 text-xs">
+          Solicitante: <strong>${this.escapeHtml(ag.solicitante)}</strong> (SIAPE: <span class="font-mono font-bold">${this.escapeHtml(ag.siape || '—')}</span>) • ${this.escapeHtml(ag.vinculo || '')}
+        </div>
+        <div class="text-slate-500 text-[11px]">
+          Recursos solicitados pelo interessado: <strong>${(ag.recursos && ag.recursos.length > 0) ? ag.recursos.join(", ") : "Nenhum extra"}</strong>
+        </div>
+      `;
     }
 
-    if (window.calendarManager) await window.calendarManager.render();
-    await this.renderAgendamentosTable();
-    await this.renderPautaDoDia();
+    const chkContainer = document.getElementById("analise-checklist-container");
+    if (chkContainer) {
+      const items = (space && space.checklist) ? space.checklist : [];
+      if (items.length === 0) {
+        chkContainer.innerHTML = `<span class="text-slate-400 text-xs italic col-span-2">Nenhum equipamento cadastrado no checklist SisInfra deste espaço.</span>`;
+      } else {
+        const reqList = ag.recursos || [];
+        chkContainer.innerHTML = items.map(item => {
+          // Marcado se ativo na sala ou expressamente solicitado
+          const isChecked = item.ativo !== false || reqList.includes(item.label);
+          return `
+            <label class="flex items-center gap-2 p-2 bg-white rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors">
+              <input type="checkbox" name="analise-recursos" value="${this.escapeHtml(item.label)}" ${isChecked ? 'checked' : ''} class="rounded text-emerald-600 focus:ring-emerald-500">
+              <span>${item.icon || '📦'}</span>
+              <span class="font-semibold text-slate-800 text-[11px]">${this.escapeHtml(item.label)}</span>
+            </label>
+          `;
+        }).join("");
+      }
+    }
+
+    const parecerEl = document.getElementById("analise-parecer-input");
+    if (parecerEl) parecerEl.value = ag.parecerGestor || "";
+
+    this.openModal("modal-analise-gestor");
+  }
+
+  async confirmBookingWithResources() {
+    if (!this.currentAnaliseBookingId) return;
+    const ag = await window.storageService.getAgendamentoById(this.currentAnaliseBookingId);
+    if (!ag) return;
+
+    const selectedRecursos = [];
+    document.querySelectorAll("input[name='analise-recursos']:checked").forEach(cb => {
+      selectedRecursos.push(cb.value);
+    });
+
+    const parecer = document.getElementById("analise-parecer-input")?.value.trim() || "";
+    const user = window.authService.getCurrentUser();
+    const gestorNome = user ? user.nome : "Gestor da Agenda SisInfra";
+    const gestorEmail = user ? user.email : "hjfd@academico.ufpb.br";
+
+    try {
+      const updated = await window.storageService.confirmarReservaComRecursos(ag.id, {
+        recursosDisponiveis: selectedRecursos,
+        parecer,
+        gestorNome,
+        gestorEmail
+      });
+
+      this.closeModal("modal-analise-gestor");
+      this.closeModal("modal-booking-details");
+      this.showToast("Reserva confirmada com sucesso com conferência dos recursos!", "success");
+
+      const space = await window.storageService.getEspacoById(ag.auditorioId);
+      if (window.emailService) {
+        await window.emailService.notify("reserva_confirmada", updated, { space });
+      }
+
+      await this.refreshAllData();
+    } catch (err) {
+      alert("Erro ao confirmar reserva: " + err.message);
+    }
+  }
+
+  openComplementacaoModal(id) {
+    this.currentComplementacaoBookingId = id;
+    this.renderComplementacaoResumo(id);
+    this.openModal("modal-complementacao-gestor");
+  }
+
+  openComplementacaoModalFromAnalise() {
+    this.closeModal("modal-analise-gestor");
+    this.openComplementacaoModal(this.currentAnaliseBookingId);
+  }
+
+  async renderComplementacaoResumo(id) {
+    const ag = await window.storageService.getAgendamentoById(id);
+    if (!ag) return;
+    const resumoEl = document.getElementById("complementacao-resumo-container");
+    if (resumoEl) {
+      resumoEl.innerHTML = `
+        <div class="flex items-center justify-between">
+          <strong class="text-slate-900">${this.escapeHtml(ag.titulo)}</strong>
+          <span class="font-mono text-slate-500">#${ag.id}</span>
+        </div>
+        <div class="text-slate-600 text-xs">
+          Solicitante: <strong>${this.escapeHtml(ag.solicitante)}</strong> (${this.escapeHtml(ag.email)}) • SIAPE: <strong>${this.escapeHtml(ag.siape || '—')}</strong>
+        </div>
+      `;
+    }
+    const input = document.getElementById("complementacao-texto-input");
+    if (input) input.value = "";
+  }
+
+  fillComplementacaoMotivo(texto) {
+    const input = document.getElementById("complementacao-texto-input");
+    if (input) input.value = texto;
+  }
+
+  async confirmRequestComplementacao() {
+    if (!this.currentComplementacaoBookingId) return;
+    const texto = document.getElementById("complementacao-texto-input")?.value.trim();
+    if (!texto) {
+      alert("Por favor, descreva as pendências ou informações a serem complementadas.");
+      return;
+    }
+
+    const ag = await window.storageService.getAgendamentoById(this.currentComplementacaoBookingId);
+    if (!ag) return;
+
+    const user = window.authService.getCurrentUser();
+    const gestorNome = user ? user.nome : "Gestor da Agenda SisInfra";
+    const gestorEmail = user ? user.email : "hjfd@academico.ufpb.br";
+
+    try {
+      const updated = await window.storageService.solicitarComplementacao(ag.id, {
+        solicitacao: texto,
+        gestorNome,
+        gestorEmail
+      });
+
+      this.closeModal("modal-complementacao-gestor");
+      this.closeModal("modal-booking-details");
+      this.showToast("Solicitação de complementação registrada e notificada ao interessado!", "info");
+
+      const space = await window.storageService.getEspacoById(ag.auditorioId);
+      if (window.emailService) {
+        await window.emailService.notify("complementacao_informacoes", updated, { space, motivo: texto });
+      }
+
+      await this.refreshAllData();
+    } catch (err) {
+      alert("Erro ao registrar complementação: " + err.message);
+    }
+  }
+
+  async approveBooking(id) {
+    await this.openAnaliseModal(id);
   }
 
   // ================= NEGAR / RECUSAR RESERVA =================
@@ -1139,7 +1358,7 @@ class AppManager {
                       </span>
                     </div>
                     <h4 class="font-bold text-sm text-slate-900 mb-1">${this.escapeHtml(ev.titulo)}</h4>
-                    <p class="text-[11px] text-slate-600"><strong>Responsável:</strong> ${this.escapeHtml(ev.solicitante)}</p>
+                    <p class="text-[11px] text-slate-600"><strong>Responsável:</strong> ${this.escapeHtml(ev.solicitante)} • <span class="font-mono">SIAPE ${this.escapeHtml(ev.siape || '—')}</span></p>
                     ${ev.recursos && ev.recursos.length > 0 ? `
                       <div class="text-[10px] text-slate-500 mt-2 pt-2 border-t border-slate-100">
                         <strong>Recursos:</strong> ${ev.recursos.join(", ")}
@@ -1506,12 +1725,29 @@ class AppManager {
     const btnNewUser = document.getElementById("btn-novo-usuario");
     const closeUserBtn = document.getElementById("btn-close-modal-user");
     const userForm = document.getElementById("form-usuario");
+    const perfilSelect = document.getElementById("usr-perfil");
+
+    if (perfilSelect) {
+      perfilSelect.addEventListener("change", (e) => {
+        const isG = e.target.value === "gestor";
+        const cA = document.getElementById("perm-aprovar");
+        const cC = document.getElementById("perm-checklist");
+        const cB = document.getElementById("perm-bloqueio");
+        const cU = document.getElementById("perm-usuarios");
+        if (cA) cA.checked = true;
+        if (cC) cC.checked = isG;
+        if (cB) cB.checked = isG;
+        if (cU) cU.checked = isG;
+      });
+    }
 
     if (btnNewUser) {
       btnNewUser.addEventListener("click", () => {
         this.editingUserId = null;
         userForm.reset();
         document.getElementById("modal-user-title").textContent = "Cadastrar Pessoa Autorizada";
+        const cA = document.getElementById("perm-aprovar");
+        if (cA) cA.checked = true;
         this.openModal("modal-usuario");
       });
     }
@@ -1527,27 +1763,41 @@ class AppManager {
         e.preventDefault();
 
         const nome = document.getElementById("usr-nome").value.trim();
+        const siape = (document.getElementById("usr-siape")?.value || "").trim();
         let email = document.getElementById("usr-email").value.trim().toLowerCase();
         const setor = document.getElementById("usr-setor").value.trim();
         const perfil = document.getElementById("usr-perfil").value;
         const senha = document.getElementById("usr-senha").value;
 
-        if (!email.endsWith("@academico.ufpb.br")) {
-          alert("Apenas e-mails institucionais com final @academico.ufpb.br são permitidos.");
+        if (!email.endsWith("@academico.ufpb.br") && email !== "hjfd@cademico.ufpb.br") {
+          alert("Apenas e-mails institucionais com terminação @academico.ufpb.br são permitidos.");
           return;
         }
 
+        if (!siape) {
+          alert("A matrícula SIAPE do servidor é obrigatória.");
+          return;
+        }
+
+        const permissoes = {
+          aprovar: perfil === "gestor" ? true : !!document.getElementById("perm-aprovar")?.checked,
+          checklist: perfil === "gestor" ? true : !!document.getElementById("perm-checklist")?.checked,
+          bloqueio: perfil === "gestor" ? true : !!document.getElementById("perm-bloqueio")?.checked,
+          usuarios: perfil === "gestor" ? true : !!document.getElementById("perm-usuarios")?.checked
+        };
+
         try {
           if (this.editingUserId) {
-            await window.storageService.updateUsuario(this.editingUserId, { nome, email, setor, perfil });
-            this.showToast("Dados do usuário atualizados.", "success");
+            await window.storageService.updateUsuario(this.editingUserId, { nome, siape, email, setor, perfil, permissoes, senha });
+            this.showToast("Dados e permissões do usuário atualizados.", "success");
             this.editingUserId = null;
           } else {
-            await window.storageService.createUsuario({ nome, email, setor, perfil, senha });
+            await window.storageService.createUsuario({ nome, siape, email, setor, perfil, permissoes, senha });
             this.showToast("Pessoa autorizada cadastrada com sucesso!", "success");
           }
           this.closeModal("modal-usuario");
           this.renderUsuariosList();
+          this.updateAuthUI();
         } catch (err) {
           alert(err.message);
         }
@@ -1564,16 +1814,18 @@ class AppManager {
 
     tbody.innerHTML = usuarios.map(u => {
       const isCurrent = currentUser && (currentUser.email || "").toLowerCase() === (u.email || "").toLowerCase();
-      const isMaster = u.isMasterAdmin || (u.email || "").toLowerCase() === "hjfd@academico.ufpb.br" || (u.email || "").toLowerCase() === "hjfd@cademico.ufpb.br";
+      const isMaster = (u.email || "").toLowerCase() === "hjfd@academico.ufpb.br" || (u.email || "").toLowerCase() === "hjfd@cademico.ufpb.br";
 
-      let badgePerfil = "";
-      if (isMaster) {
-        badgePerfil = `<span class="bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-extrabold px-2.5 py-0.5 rounded text-[10.5px] shadow-xs">👑 Gestor Principal Master</span>`;
-      } else if (u.perfil === "admin") {
-        badgePerfil = `<span class="bg-amber-100 text-amber-900 border border-amber-300 font-bold px-2 py-0.5 rounded text-[11px]">Gestor SisInfra / PRG</span>`;
-      } else {
-        badgePerfil = `<span class="bg-blue-100 text-blue-800 border border-blue-200 font-bold px-2 py-0.5 rounded text-[11px]">Operador</span>`;
-      }
+      const badgePerfil = (u.perfil === "gestor" || u.perfil === "admin")
+        ? `<span class="bg-blue-100 text-blue-900 border border-blue-300 font-bold px-2 py-0.5 rounded text-[11px]">Gestor</span>`
+        : `<span class="bg-slate-100 text-slate-800 border border-slate-300 font-bold px-2 py-0.5 rounded text-[11px]">Usuário</span>`;
+
+      const perms = u.permissoes || (u.perfil === "gestor" ? { aprovar: true, checklist: true, bloqueio: true, usuarios: true } : { aprovar: true });
+      const permChips = [];
+      if (perms.aprovar) permChips.push('<span class="bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded text-[10px]">Aprovar</span>');
+      if (perms.checklist) permChips.push('<span class="bg-blue-50 text-blue-800 border border-blue-200 px-1.5 py-0.5 rounded text-[10px]">Checklist</span>');
+      if (perms.bloqueio) permChips.push('<span class="bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded text-[10px]">Bloqueios</span>');
+      if (perms.usuarios) permChips.push('<span class="bg-purple-50 text-purple-800 border border-purple-200 px-1.5 py-0.5 rounded text-[10px]">Usuários</span>');
 
       const badgeStatus = (u.status === "ativo")
         ? `<span class="bg-green-100 text-green-800 font-bold px-2 py-0.5 rounded-full text-[11px]">Ativo</span>`
@@ -1581,19 +1833,18 @@ class AppManager {
 
       return `
         <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-          <td class="py-3 px-4 font-bold text-slate-800">
-            <div class="flex items-center gap-1.5">
-              ${isMaster ? '<span>👑</span>' : ''}
-              <span>${this.escapeHtml(u.nome)}</span>
-            </div>
-          </td>
+          <td class="py-3 px-4 font-bold text-slate-800">${this.escapeHtml(u.nome)}</td>
+          <td class="py-3 px-4 text-xs font-mono font-bold text-slate-700">${this.escapeHtml(u.siape || "-")}</td>
           <td class="py-3 px-4 text-xs font-mono text-slate-600">${this.escapeHtml(u.email)}</td>
           <td class="py-3 px-4 text-xs text-slate-600">${this.escapeHtml(u.setor || "-")}</td>
           <td class="py-3 px-4">${badgePerfil}</td>
+          <td class="py-3 px-4">
+            <div class="flex flex-wrap gap-1">${permChips.join(" ")}</div>
+          </td>
           <td class="py-3 px-4">${badgeStatus}</td>
           <td class="py-3 px-4 text-right whitespace-nowrap">
             ${isMaster ? `
-              <span class="text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-1 rounded">👑 Permanente</span>
+              <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded">Gestor Permanente</span>
             ` : (!isCurrent ? `
               <button onclick="appManager.toggleUserStatus('${u.id}', '${u.status}')" class="text-xs font-semibold px-2 py-1 rounded mr-1 ${u.status === 'ativo' ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' : 'bg-green-50 text-green-700 hover:bg-green-100'}">
                 ${u.status === 'ativo' ? 'Desativar' : 'Ativar'}
@@ -1611,8 +1862,8 @@ class AppManager {
   async toggleUserStatus(id, currentStatus) {
     const usuarios = await window.storageService.getUsuarios();
     const u = usuarios.find(usr => usr.id === id);
-    if (u && (u.isMasterAdmin || (u.email || "").toLowerCase() === "hjfd@academico.ufpb.br" || (u.email || "").toLowerCase() === "hjfd@cademico.ufpb.br")) {
-      alert("Ação não permitida: O Gestor Principal permanente (Prof. Dr. Hidelbrando Diógenes) não pode ser desativado.");
+    if (u && ((u.email || "").toLowerCase() === "hjfd@academico.ufpb.br" || (u.email || "").toLowerCase() === "hjfd@cademico.ufpb.br")) {
+      alert("Ação não permitida: O Gestor permanente (Hidelbrando Diógenes) não pode ser desativado.");
       return;
     }
 
@@ -1629,8 +1880,8 @@ class AppManager {
   async deleteUser(id) {
     const usuarios = await window.storageService.getUsuarios();
     const u = usuarios.find(usr => usr.id === id);
-    if (u && (u.isMasterAdmin || (u.email || "").toLowerCase() === "hjfd@academico.ufpb.br" || (u.email || "").toLowerCase() === "hjfd@cademico.ufpb.br")) {
-      alert("Ação não permitida: O Gestor Principal permanente (Prof. Dr. Hidelbrando Diógenes) não pode ser excluído.");
+    if (u && ((u.email || "").toLowerCase() === "hjfd@academico.ufpb.br" || (u.email || "").toLowerCase() === "hjfd@cademico.ufpb.br")) {
+      alert("Ação não permitida: O Gestor permanente (Hidelbrando Diógenes) não pode ser excluído.");
       return;
     }
 
@@ -1703,10 +1954,14 @@ class AppManager {
           <tr><th>Tipo de Evento</th><td>${this.escapeHtml(ag.tipoEvento || "Geral")}</td></tr>
           <tr><th>Data Agendada</th><td><strong>${dia}/${mes}/${ano}</strong></td></tr>
           <tr><th>Horário Autorizado</th><td><strong>${ag.horaInicio} às ${ag.horaFim}</strong></td></tr>
-          <tr><th>Solicitante / Docente</th><td>${this.escapeHtml(ag.solicitante)}</td></tr>
+          <tr><th>Solicitante / Servidor</th><td><strong>${this.escapeHtml(ag.solicitante)}</strong></td></tr>
+          <tr><th>Vínculo na UFPB</th><td>${this.escapeHtml(ag.vinculo || "Servidor Docente / Técnico")}</td></tr>
+          <tr><th>Matrícula SIAPE</th><td><strong style="font-family:monospace;">${this.escapeHtml(ag.siape || "—")}</strong></td></tr>
           <tr><th>Departamento / Setor</th><td>${this.escapeHtml(ag.departamento || "Não informado")}</td></tr>
           <tr><th>E-mail / Contato</th><td>${this.escapeHtml(ag.email)} • ${this.escapeHtml(ag.telefone || "")}</td></tr>
           <tr><th>Recursos Solicitados</th><td>${ag.recursos ? ag.recursos.join(", ") : "Nenhum recurso extra"}</td></tr>
+          ${ag.recursosConfirmados && ag.recursosConfirmados.length > 0 ? `<tr><th>Recursos Validados pela Gestão</th><td style="color:#047857;"><strong>${ag.recursosConfirmados.join(", ")}</strong></td></tr>` : ''}
+          ${ag.parecerGestor ? `<tr><th>Parecer Técnico da Gestão</th><td><em>"${this.escapeHtml(ag.parecerGestor)}"</em></td></tr>` : ''}
           <tr><th>Status da Reserva</th><td><strong>${ag.status.toUpperCase()}</strong></td></tr>
           ${ag.motivoRejeicao ? `<tr><th>Justificativa da Recusa</th><td style="color:#b91c1c;"><strong>${this.escapeHtml(ag.motivoRejeicao)}</strong></td></tr>` : ''}
           ${ag.motivoCancelamento ? `<tr><th>Motivo do Cancelamento</th><td style="color:#b45309;"><strong>${this.escapeHtml(ag.motivoCancelamento)}</strong></td></tr>` : ''}

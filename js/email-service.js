@@ -51,21 +51,27 @@ class EmailNotificationService {
         break;
 
       case "reserva_confirmada":
+      case "reserva_aprovada":
         statusLabel = "RESERVA CONFIRMADA";
         badgeColor = "bg-emerald-100 text-emerald-900 border-emerald-300";
         subject = `[Agenda SisInfra UFPB] Reserva CONFIRMADA - #${ag.id} (${ag.titulo})`;
         headline = "Sua reserva foi confirmada com sucesso!";
-        bodyIntro = `Prezado(a) ${solicitanteNome},\n\nSua reserva de espaço na Agenda SisInfra foi confirmada com sucesso pela equipe autorizada da PRG / UFPB.`;
-        bodyExtra = `📋 ORIENTAÇÕES GERAIS:\n1. A sala/auditório estará liberada 15 minutos antes do horário de início.\n2. Os recursos solicitados estarão disponíveis e inspecionados.\n3. Em caso de necessidade de cancelamento, avise com antecedência mínima de 24h pelo e-mail centraldeaulas@prg.ufpb.br.`;
+        bodyIntro = `Prezado(a) ${solicitanteNome},\n\nTemos a satisfação de informar que a sua solicitação de reserva de espaço na Agenda SisInfra foi CONFERIDA E CONFIRMADA pela gestão da PRG / UFPB.`;
+        
+        const recConfStr = (ag.recursosConfirmados && ag.recursosConfirmados.length > 0)
+          ? ag.recursosConfirmados.map(r => `  ✓ [DISPONÍVEL] ${r}`).join("\n")
+          : "  • Itens padrão da sala conferidos e operacionais.";
+
+        bodyExtra = `📋 RECURSOS E EQUIPAMENTOS VALIDADOS PELA GESTÃO:\n${recConfStr}\n\n${ag.parecerGestor ? `PARECER TÉCNICO DA GESTÃO:\n"${ag.parecerGestor}"\n\n` : ""}📋 ORIENTAÇÕES GERAIS:\n1. A sala/auditório estará liberada 15 minutos antes do horário de início.\n2. O espaço e os equipamentos validados foram inspecionados para o seu evento.\n3. Em caso de necessidade de cancelamento, avise com antecedência mínima de 24h pelo e-mail centraldeaulas@prg.ufpb.br.`;
         break;
 
-      case "reserva_aprovada":
-        statusLabel = "SOLICITAÇÃO APROVADA";
-        badgeColor = "bg-emerald-100 text-emerald-900 border-emerald-300";
-        subject = `[Agenda SisInfra UFPB] Solicitação APROVADA - #${ag.id} (${ag.titulo})`;
-        headline = "Parabéns! Sua solicitação de reserva foi APROVADA!";
-        bodyIntro = `Prezado(a) ${solicitanteNome},\n\nTemos a satisfação de informar que a sua solicitação de reserva para o evento "${ag.titulo}" foi AVALIADA E APROVADA pela Pró-Reitoria de Graduação (PRG / UFPB).`;
-        bodyExtra = `📋 ORIENTAÇÕES DE USO:\n• Apresente este e-mail ou o comprovante impresso à portaria/apoio da Central de Aulas no dia do evento.\n• Conserve os equipamentos de áudio, projeção e climatização conforme as orientações de patrimônio do SisInfra.`;
+      case "complementacao_informacoes":
+        statusLabel = "AGUARDANDO COMPLEMENTAÇÃO DE INFORMAÇÕES";
+        badgeColor = "bg-amber-100 text-amber-900 border-amber-300";
+        subject = `[Agenda SisInfra UFPB] Complementação Necessária - #${ag.id} (${ag.titulo})`;
+        headline = "Ação Necessária: Complementação de Informações para sua Reserva";
+        bodyIntro = `Prezado(a) ${solicitanteNome},\n\nA sua solicitação de reserva #${ag.id} foi analisada pela equipe gestora da Central de Aulas (PRG / UFPB). Para que a reserva possa ser confirmada e os equipamentos liberados, solicitamos o envio das seguintes informações/documentos complementares:`;
+        bodyExtra = `📝 PENDÊNCIAS / INFORMAÇÕES A COMPLEMENTAR:\n"${motivoTexto || ag.solicitacaoComplementacao?.texto || 'Favor entrar em contato para alinhamento dos detalhes operacionais do evento.'}"\n\n💡 COMO PROCEDER:\nResponda diretamente a este e-mail (ou para centraldeaulas@prg.ufpb.br) informando o código da reserva #${ag.id} e os dados solicitados para que possamos finalizar a confirmação.`;
         break;
 
       case "reserva_negada":
@@ -127,6 +133,8 @@ DADOS OFICIAIS DO AGENDAMENTO
 • Título do Evento: ${ag.titulo}
 • Tipo do Evento: ${ag.tipoEvento || "Atividade Acadêmica"}
 • Solicitante: ${solicitanteNome}
+• Vínculo Institucional: ${ag.vinculo || "Servidor da UFPB"}
+• Matrícula SIAPE: ${ag.siape || "Não informada"}
 • Departamento / Setor: ${ag.departamento || "UFPB"}
 • E-mail do Solicitante: ${ag.email}
 • Telefone: ${ag.telefone || "Não informado"}
@@ -271,24 +279,24 @@ Universidade Federal da Paraíba - João Pessoa / PB
   }
 
   /**
-   * Prepara e exibe e-mail de solicitação de acesso para o Gestor Principal hjfd@academico.ufpb.br
+   * Prepara e exibe e-mail de solicitação de acesso para o Administrador hjfd@academico.ufpb.br
    */
   requestAccessEmail(userEmail, userName = "") {
     const gestorEmail = "hjfd@academico.ufpb.br";
     const subject = `[Agenda SisInfra UFPB] Solicitação de Acesso ao Sistema - ${userName || userEmail}`;
     const dateStr = new Date().toLocaleDateString('pt-BR');
     
-    const bodyText = `Prezado Prof. Dr. Hidelbrando Diógenes,\nGestor Principal da Agenda SisInfra (PRG / UFPB),\n\nVenho por meio deste solicitar autorização e cadastro como membro autorizado no sistema Agenda SisInfra da Central de Aulas (PRG / UFPB).\n\n📋 DADOS DO SOLICITANTE:\n• Nome: ${userName || "Membro da Equipe"}\n• E-mail Institucional: ${userEmail}\n• Domínio: @academico.ufpb.br (Google Workspace UFPB)\n• Data da Solicitação: ${dateStr}\n\n🎯 PERFIL SOLICITADO:\n[ ] Operador de Reservas (Criar, aprovar e consultar reservas e pauta)\n[ ] Gestor SisInfra / PRG (Acesso gerencial ampliado)\n\nAgradeço antecipadamente pela atenção e aguardo a liberação do acesso.\n\nAtenciosamente,\n${userName || userEmail}`;
+    const bodyText = `Prezado Hidelbrando Diógenes,\nAdministrador da Agenda SisInfra (PRG / UFPB),\n\nVenho por meio deste solicitar autorização e cadastro como membro autorizado no sistema Agenda SisInfra da Central de Aulas (PRG / UFPB).\n\n📋 DADOS DO SOLICITANTE:\n• Nome: ${userName || "Membro da Equipe"}\n• E-mail Institucional: ${userEmail}\n• Domínio: @academico.ufpb.br (Google Workspace UFPB)\n• Data da Solicitação: ${dateStr}\n\n🎯 PERFIL SOLICITADO:\n[ ] Operador de Reservas (Criar, aprovar e consultar reservas e pauta)\n[ ] Administrador SisInfra / PRG\n\nAgradeço antecipadamente pela atenção e aguardo a liberação do acesso.\n\nAtenciosamente,\n${userName || userEmail}`;
 
     const mailtoUrl = `mailto:${gestorEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${gestorEmail}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
 
     const emailData = {
       situation: "solicitacao_acesso",
-      statusLabel: "SOLICITAÇÃO DE ACESSO AO GESTOR PRINCIPAL",
-      badgeColor: "bg-amber-100 text-amber-900 border-amber-300",
+      statusLabel: "SOLICITAÇÃO DE ACESSO AO ADMINISTRADOR",
+      badgeColor: "bg-slate-100 text-slate-800 border-slate-300",
       recipient: gestorEmail,
-      recipientName: "Prof. Dr. Hidelbrando Diógenes (Gestor Principal)",
+      recipientName: "Hidelbrando Diógenes (Administrador)",
       subject,
       bodyText,
       mailtoUrl,

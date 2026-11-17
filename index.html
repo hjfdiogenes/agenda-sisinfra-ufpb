@@ -396,23 +396,49 @@
             </div>
           </div>
 
-          <!-- Dados do Solicitante -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">Nome Completo do Solicitante *</label>
-              <input type="text" id="ag-solicitante" required placeholder="Ex: Profa. Dra. Silva" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
+          <!-- Dados do Solicitante (Exclusivo Docente / Técnico UFPB) -->
+          <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-200">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-sm">🏛️</span>
+              <div>
+                <strong class="text-xs text-ufpb-blue font-bold uppercase tracking-wider">Identificação do Servidor Solicitante</strong>
+                <p class="text-[10px] text-slate-500">Exclusivo para servidores Docentes ou Técnico-Administrativos da UFPB. Matrícula SIAPE obrigatória.</p>
+              </div>
             </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">Departamento / Coordenação / Setor *</label>
-              <input type="text" id="ag-departamento" required placeholder="Ex: Coordenação de Graduação / PRG" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">E-mail Institucional (@academico.ufpb.br) *</label>
-              <input type="email" id="ag-email" required placeholder="nome@academico.ufpb.br" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">Telefone / WhatsApp para contato *</label>
-              <input type="tel" id="ag-telefone" required placeholder="(83) 98888-0000" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Nome Completo do Servidor *</label>
+                <input type="text" id="ag-solicitante" required placeholder="Ex: Profa. Dra. Maria Clara Silva" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Vínculo na UFPB *</label>
+                  <select id="ag-vinculo" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
+                    <option value="">Selecione...</option>
+                    <option value="Docente (Professor UFPB)">Docente (Professor)</option>
+                    <option value="Técnico-Administrativo (TAE UFPB)">Técnico-Administrativo (TAE)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Matrícula SIAPE *</label>
+                  <input type="text" id="ag-siape" required pattern="[0-9]{5,8}" maxlength="8" placeholder="Ex: 1234567" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Departamento / Coordenação / Setor *</label>
+                <input type="text" id="ag-departamento" required placeholder="Ex: Departamento de Metodologia / PRG" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">E-mail Institucional (@academico.ufpb.br) *</label>
+                  <input type="email" id="ag-email" required placeholder="nome@academico.ufpb.br" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Telefone / WhatsApp *</label>
+                  <input type="tel" id="ag-telefone" required placeholder="(83) 98888-0000" class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
+                </div>
+              </div>
             </div>
           </div>
 
@@ -461,18 +487,15 @@
         </button>
       </div>
 
-      <!-- Card Informativo do Gestor Principal -->
-      <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
-        <div class="flex items-start gap-3">
-          <span class="text-2xl">👑</span>
-          <div>
-            <h3 class="font-bold text-xs text-amber-950">Gestor Principal Master: Prof. Dr. Hidelbrando Diógenes (<code class="font-mono text-amber-900 font-bold">hjfd@academico.ufpb.br</code>)</h3>
-            <p class="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
-              Possui autoridade exclusiva para conceder acesso ao sistema e cadastrar novos Gestores SisInfra e Operadores com conta Google institucional <strong>@academico.ufpb.br</strong>.
-            </p>
-          </div>
+      <!-- Card Informativo de Gestão -->
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+        <div>
+          <h3 class="font-bold text-xs text-slate-800">Administrador: Hidelbrando Diógenes (<code class="font-mono text-slate-700 font-bold">hjfd@academico.ufpb.br</code>)</h3>
+          <p class="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+            Responsável pela concessão de acesso ao sistema e cadastro de gestores e operadores com e-mail institucional <strong>@academico.ufpb.br</strong>.
+          </p>
         </div>
-        <div class="text-[11px] font-semibold text-amber-800 bg-amber-100/70 border border-amber-300 px-3 py-1.5 rounded-lg self-start md:self-auto whitespace-nowrap">
+        <div class="text-[11px] font-semibold text-slate-700 bg-white border border-slate-300 px-3 py-1.5 rounded-lg self-start md:self-auto whitespace-nowrap">
           Google Workspace @academico.ufpb.br
         </div>
       </div>
@@ -483,6 +506,7 @@
           <thead class="bg-slate-50 text-slate-600 uppercase font-bold border-b border-slate-200">
             <tr>
               <th class="py-3 px-4">Nome</th>
+              <th class="py-3 px-4">SIAPE</th>
               <th class="py-3 px-4">E-mail Institucional</th>
               <th class="py-3 px-4">Setor / Departamento</th>
               <th class="py-3 px-4">Perfil</th>
@@ -829,9 +853,15 @@
 
       <form id="form-google-prompt" class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">E-mail ou conta @academico.ufpb.br</label>
-          <input type="email" id="google-prompt-email" required placeholder="seu.usuario@academico.ufpb.br" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue focus:bg-white transition-all">
+          <label class="block text-xs font-bold text-slate-700 mb-1">E-mail Institucional Google (@academico.ufpb.br) *</label>
+          <input type="email" id="google-prompt-email" required placeholder="seu.usuario@academico.ufpb.br" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue focus:bg-white transition-all font-mono">
           <p class="text-[10px] text-slate-400 mt-1">Exemplo: <span class="text-slate-600 font-mono">hjfd@academico.ufpb.br</span></p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Senha de Acesso Institucional *</label>
+          <input type="password" id="google-prompt-password" required placeholder="Digite sua senha de acesso" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue focus:bg-white transition-all">
+          <p class="text-[10px] text-slate-400 mt-1">Acesso protegido. Não é permitido entrar sem senha.</p>
         </div>
 
         <div class="pt-2 flex items-center justify-between">
@@ -839,7 +869,7 @@
             Cancelar
           </button>
           <button type="submit" class="bg-ufpb-blue hover:bg-ufpb-navy text-white text-xs font-bold px-5 py-2.5 rounded-lg shadow-sm transition-all">
-            Avançar
+            Entrar no Sistema
           </button>
         </div>
       </form>
@@ -870,20 +900,26 @@
       <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-5">
         <div>
           <h3 id="modal-user-title" class="font-bold text-base text-ufpb-blue">Cadastrar Pessoa Autorizada</h3>
-          <p class="text-[11px] text-slate-500">Concessão de acesso gerenciada pelo Gestor Principal (Prof. Dr. Hidelbrando Diógenes)</p>
+          <p class="text-[11px] text-slate-500">Concessão de acesso aos servidores da equipe</p>
         </div>
         <button id="btn-close-modal-user" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
       </div>
 
       <form id="form-usuario" class="space-y-4">
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Nome Completo *</label>
-          <input type="text" id="usr-nome" required placeholder="Ex: Maria Clara Souza" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Nome Completo *</label>
+            <input type="text" id="usr-nome" required placeholder="Ex: Maria Clara Souza" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Matrícula SIAPE *</label>
+            <input type="text" id="usr-siape" required placeholder="Ex: 1234567" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue font-mono">
+          </div>
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">E-mail Institucional Google (@academico.ufpb.br) *</label>
           <input type="email" id="usr-email" required placeholder="maria.souza@academico.ufpb.br" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
-          <p class="text-[10px] text-slate-400 mt-1">O usuário poderá autenticar diretamente com o botão "Entrar com Google".</p>
+          <p class="text-[10px] text-slate-400 mt-1">O usuário poderá autenticar diretamente com o botão "Continuar com o Google".</p>
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">Setor / Departamento *</label>
@@ -891,15 +927,56 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Nível de Acesso *</label>
-            <select id="usr-perfil" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
-              <option value="operador">Operador (Reservas, Pauta e Checklist)</option>
-              <option value="admin">Gestor SisInfra / PRG (Acesso Total & Bloqueios)</option>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Categoria *</label>
+            <select id="usr-perfil" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
+              <option value="gestor">Gestor (Acesso Total e Gestão)</option>
+              <option value="usuario">Usuário (Permissões Parametrizadas)</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Senha (Modo Offline / Fallback)</label>
-            <input type="password" id="usr-senha" placeholder="Opcional se usar Google" minlength="6" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
+            <label class="block text-xs font-bold text-slate-700 mb-1">Senha Institucional de Acesso *</label>
+            <input type="password" id="usr-senha" required placeholder="Senha institucional de acesso" minlength="6" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
+          </div>
+        </div>
+
+        <!-- Painel de Parametrização de Permissões (Configurado pelo Gestor) -->
+        <div id="usr-permissoes-box" class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Acessos e Ações Permitidas no Sistema</label>
+            <span class="text-[10px] text-slate-500 italic">Definido pelo Gestor</span>
+          </div>
+          <p class="text-[11px] text-slate-500 leading-relaxed">
+            Selecione o que este usuário está autorizado a visualizar, gerenciar e executar:
+          </p>
+          <div class="space-y-2 text-xs pt-1">
+            <label class="flex items-start gap-2.5 text-slate-700 cursor-pointer">
+              <input type="checkbox" id="perm-aprovar" class="mt-0.5 rounded text-ufpb-blue focus:ring-ufpb-blue" checked>
+              <div>
+                <strong>Analisar & Confirmar Reservas:</strong>
+                <span class="text-slate-500 block text-[11px]">Conferir checklist de equipamentos disponíveis na sala e solicitar complementação ao interessado.</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2.5 text-slate-700 cursor-pointer">
+              <input type="checkbox" id="perm-checklist" class="mt-0.5 rounded text-ufpb-blue focus:ring-ufpb-blue">
+              <div>
+                <strong>Gerenciar Infraestrutura & Checklist:</strong>
+                <span class="text-slate-500 block text-[11px]">Ativar/desativar equipamentos das salas e gerenciar checklist SisInfra.</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2.5 text-slate-700 cursor-pointer">
+              <input type="checkbox" id="perm-bloqueio" class="mt-0.5 rounded text-ufpb-blue focus:ring-ufpb-blue">
+              <div>
+                <strong>Gerenciar Bloqueios de Salas:</strong>
+                <span class="text-slate-500 block text-[11px]">Criar e editar períodos letivos e bloqueios de salas no sistema.</span>
+              </div>
+            </label>
+            <label class="flex items-start gap-2.5 text-slate-700 cursor-pointer">
+              <input type="checkbox" id="perm-usuarios" class="mt-0.5 rounded text-ufpb-blue focus:ring-ufpb-blue">
+              <div>
+                <strong>Gerenciar Pessoas e Acessos:</strong>
+                <span class="text-slate-500 block text-[11px]">Cadastrar novos usuários e conceder/revogar permissões no sistema.</span>
+              </div>
+            </label>
           </div>
         </div>
 
@@ -915,7 +992,7 @@
     </div>
   </div>
 
-  <!-- MODAL: ACESSO PENDENTE DE AUTORIZAÇÃO PELO GESTOR PRINCIPAL -->
+  <!-- MODAL: ACESSO PENDENTE DE AUTORIZAÇÃO -->
   <div id="modal-acesso-pendente" class="modal-overlay">
     <div class="modal-container p-6 sm:p-8 max-w-lg">
       <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
@@ -939,16 +1016,16 @@
 
         <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-2">
           <div class="font-bold text-slate-800 flex items-center gap-1.5">
-            <span>👑</span> <span>Autorização Exclusiva do Gestor Principal:</span>
+            <span>🛡️</span> <span>Autorização da Gestão:</span>
           </div>
           <p class="text-slate-600 leading-relaxed text-[11px]">
-            Conforme as diretrizes da PRG / UFPB, apenas o <strong>Prof. Dr. Hidelbrando Diógenes</strong> (<a href="mailto:hjfd@academico.ufpb.br" class="text-ufpb-blue font-semibold hover:underline">hjfd@academico.ufpb.br</a>) pode conceder acesso ao sistema e cadastrar novos gestores e operadores.
+            Conforme as diretrizes da PRG / UFPB, apenas <strong>Hidelbrando Diógenes</strong> (<a href="mailto:hjfd@academico.ufpb.br" class="text-ufpb-blue font-semibold hover:underline">hjfd@academico.ufpb.br</a>) pode conceder acesso ao sistema e cadastrar novos gestores e operadores.
           </p>
         </div>
 
         <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-slate-200">
           <button id="btn-request-access-now" type="button" class="flex-1 bg-ufpb-blue hover:bg-ufpb-navy text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all">
-            <span>✉️</span> <span>Solicitar Acesso ao Prof. Hidelbrando</span>
+            <span>✉️</span> <span>Solicitar Acesso a Hidelbrando Diógenes</span>
           </button>
           <button type="button" onclick="appManager.closeModal('modal-acesso-pendente')" class="px-4 py-2.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg">
             Fechar
@@ -1287,6 +1364,111 @@ firebase deploy</pre>
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ANÁLISE E CONFIRMAÇÃO DE RECURSOS PELO GESTOR -->
+  <div id="modal-analise-gestor" class="modal-overlay">
+    <div class="modal-container p-6 sm:p-8 max-w-xl">
+      <div class="flex items-center justify-between border-b border-emerald-200 pb-3 mb-4 bg-emerald-50/50 -mx-6 sm:-mx-8 -mt-6 sm:-mt-8 px-6 sm:px-8 pt-6 rounded-t-xl">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📋</span>
+          <div>
+            <h3 class="font-bold text-base text-emerald-950">Conferência & Confirmação de Recursos da Sala</h3>
+            <p class="text-[11px] text-emerald-800">Indique o que está realmente disponível na sala antes de confirmar</p>
+          </div>
+        </div>
+        <button type="button" onclick="appManager.closeModal('modal-analise-gestor')" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div id="analise-resumo-container" class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1">
+          <!-- Renderizado dinamicamente -->
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block font-bold text-slate-800 uppercase tracking-wider">
+              Recursos e Equipamentos Realmente Disponíveis na Sala *
+            </label>
+            <span class="text-[11px] text-slate-500 italic">Marque os itens validados</span>
+          </div>
+          <div id="analise-checklist-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <!-- Renderizado dinamicamente com base no checklist do espaço -->
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-800 mb-1">
+            Parecer Técnico / Observações da Gestão (opcional)
+          </label>
+          <textarea id="analise-parecer-input" rows="2" placeholder="Ex: Equipamentos conferidos e testados. Projetor laser operacional e cabos disponíveis." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+        </div>
+
+        <div class="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+          <button type="button" onclick="appManager.openComplementacaoModalFromAnalise()" class="px-3.5 py-2 text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-lg flex items-center gap-1.5 transition-colors">
+            <span>📝</span> <span>Solicitar Complementação</span>
+          </button>
+          <div class="flex items-center gap-2 ml-auto">
+            <button type="button" onclick="appManager.closeModal('modal-analise-gestor')" class="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
+              Cancelar
+            </button>
+            <button type="button" onclick="appManager.confirmBookingWithResources()" class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm flex items-center gap-1.5 transition-colors">
+              <span>✓</span> <span>Confirmar Reserva com Recursos Validados</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SOLICITAR COMPLEMENTAÇÃO DE INFORMAÇÕES PELO GESTOR -->
+  <div id="modal-complementacao-gestor" class="modal-overlay">
+    <div class="modal-container p-6 sm:p-8 max-w-lg">
+      <div class="flex items-center justify-between border-b border-amber-200 pb-3 mb-4 bg-amber-50/50 -mx-6 sm:-mx-8 -mt-6 sm:-mt-8 px-6 sm:px-8 pt-6 rounded-t-xl">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📝</span>
+          <div>
+            <h3 class="font-bold text-base text-amber-950">Solicitar Complementação de Informações</h3>
+            <p class="text-[11px] text-amber-800">O interessado será notificado por e-mail com as pendências indicadas</p>
+          </div>
+        </div>
+        <button type="button" onclick="appManager.closeModal('modal-complementacao-gestor')" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div id="complementacao-resumo-container" class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1">
+          <!-- Renderizado dinamicamente -->
+        </div>
+
+        <div class="space-y-2">
+          <label class="block font-bold text-slate-800">
+            Pendências / Informações a Serem Complementadas <span class="text-amber-700">*</span>
+          </label>
+          <div class="flex flex-wrap gap-1.5 pt-1">
+            <button type="button" onclick="appManager.fillComplementacaoMotivo('Favor informar o número estimado de participantes e anexar a programação completa do evento.')" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold border border-slate-300 transition-colors">
+              Estimativa de Público & Programação
+            </button>
+            <button type="button" onclick="appManager.fillComplementacaoMotivo('Favor esclarecer se haverá palestrantes externos ou necessidade de apoio técnico para transmissão.')" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold border border-slate-300 transition-colors">
+              Palestrantes & Transmissão
+            </button>
+            <button type="button" onclick="appManager.fillComplementacaoMotivo('Favor informar a portaria ou documento oficial de designação da banca ou comissão.')" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold border border-slate-300 transition-colors">
+              Portaria da Banca
+            </button>
+          </div>
+
+          <textarea id="complementacao-texto-input" rows="4" required placeholder="Descreva com detalhes o que o interessado precisa complementar para que a reserva possa ser confirmada..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500"></textarea>
+        </div>
+
+        <div class="pt-4 border-t border-slate-200 flex items-center justify-end gap-2">
+          <button type="button" onclick="appManager.closeModal('modal-complementacao-gestor')" class="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
+            Voltar
+          </button>
+          <button type="button" onclick="appManager.confirmRequestComplementacao()" class="px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg shadow-sm flex items-center gap-1.5 transition-colors">
+            <span>✉️</span> <span>Enviar Solicitação ao Solicitante</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

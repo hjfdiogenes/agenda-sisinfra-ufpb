@@ -7,12 +7,18 @@
 const SEED_USUARIOS = [
   {
     id: "usr_hjfd_principal",
-    nome: "Prof. Dr. Hidelbrando Diógenes",
+    nome: "Hidelbrando Diógenes",
+    siape: "1234567",
     email: "hjfd@academico.ufpb.br",
     setor: "Pró-Reitoria de Graduação (PRG / UFPB)",
-    perfil: "admin",
-    isMasterAdmin: true,
-    cargo: "Gestor Principal da Agenda SisInfra",
+    perfil: "gestor", // duas categorias: 'gestor' ou 'usuario'
+    cargo: "Gestor",
+    permissoes: {
+      aprovar: true,
+      checklist: true,
+      bloqueio: true,
+      usuarios: true
+    },
     status: "ativo",
     senha: "admin123",
     criadoEm: "2026-01-15T08:00:00.000Z"
@@ -20,11 +26,17 @@ const SEED_USUARIOS = [
   {
     id: "usr_operador",
     nome: "Técnico de Apoio Acadêmico",
+    siape: "7654321",
     email: "operador@academico.ufpb.br",
     setor: "Central de Aulas - Campus I",
-    perfil: "operador",
-    isMasterAdmin: false,
-    cargo: "Operador de Reservas",
+    perfil: "usuario",
+    cargo: "Usuário",
+    permissoes: {
+      aprovar: true,
+      checklist: false,
+      bloqueio: false,
+      usuarios: false
+    },
     status: "ativo",
     senha: "operador123",
     criadoEm: "2026-02-01T10:00:00.000Z"
@@ -356,14 +368,14 @@ class StorageService {
     if (!Array.isArray(storedUsers) || storedUsers.length === 0) {
       localStorage.setItem("prg_usuarios", JSON.stringify(SEED_USUARIOS));
     } else {
-      // Garante que o Gestor Principal hjfd@academico.ufpb.br esteja presente e com status ativo e master
+      // Garante que o Gestor hjfd@academico.ufpb.br esteja presente e com status ativo e perfil gestor
       const hasMaster = storedUsers.some(u => 
         (u.email || "").toLowerCase() === "hjfd@academico.ufpb.br" || 
         (u.email || "").toLowerCase() === "hjfd@cademico.ufpb.br"
       );
 
       if (!hasMaster) {
-        // Remove admin genérico antigo se houver e adiciona o Gestor Principal no topo
+        // Adiciona o Gestor no topo
         storedUsers = storedUsers.filter(u => (u.email || "").toLowerCase() !== "admin@academico.ufpb.br");
         storedUsers.unshift(SEED_USUARIOS[0]);
         localStorage.setItem("prg_usuarios", JSON.stringify(storedUsers));
@@ -372,12 +384,31 @@ class StorageService {
         storedUsers.forEach(u => {
           const em = (u.email || "").toLowerCase();
           if (em === "hjfd@academico.ufpb.br" || em === "hjfd@cademico.ufpb.br") {
-            if (!u.isMasterAdmin || u.perfil !== "admin" || u.status !== "ativo") {
-              u.isMasterAdmin = true;
-              u.perfil = "admin";
+            if (u.perfil !== "gestor" || u.status !== "ativo" || u.nome !== "Hidelbrando Diógenes" || !u.siape || !u.permissoes) {
+              u.perfil = "gestor";
               u.status = "ativo";
-              u.nome = "Prof. Dr. Hidelbrando Diógenes";
-              u.cargo = "Gestor Principal da Agenda SisInfra";
+              u.nome = "Hidelbrando Diógenes";
+              u.siape = u.siape || "1234567";
+              u.cargo = "Gestor";
+              u.permissoes = {
+                aprovar: true,
+                checklist: true,
+                bloqueio: true,
+                usuarios: true
+              };
+              changed = true;
+            }
+          } else {
+            // Outros usuários pertencem à categoria usuario por padrão se não forem gestores
+            if (!u.perfil || (u.perfil !== "gestor" && u.perfil !== "usuario")) {
+              u.perfil = "usuario";
+              u.cargo = u.cargo || "Usuário";
+              u.permissoes = u.permissoes || {
+                aprovar: true,
+                checklist: false,
+                bloqueio: false,
+                usuarios: false
+              };
               changed = true;
             }
           }
@@ -388,15 +419,16 @@ class StorageService {
       }
     }
 
-    // Inicialização da Agenda Limpa (sem dados fictícios, agenda 100% limpa)
-    const existingBookings = localStorage.getItem("prg_agendamentos");
-    if (!existingBookings || existingBookings === "null") {
+    // Inicialização da Agenda 100% Limpa (limpa todos os agendamentos fictícios/mock)
+    const cleanAgendaV5 = localStorage.getItem("prg_clean_agenda_v5");
+    if (!cleanAgendaV5) {
       localStorage.setItem("prg_agendamentos", JSON.stringify([]));
+      localStorage.setItem("prg_clean_agenda_v5", "true");
     } else {
       try {
-        const list = JSON.parse(existingBookings);
-        // Limpa quaisquer agendamentos de teste legados (ag_001, etc.)
-        const filtered = list.filter(item => !String(item.id).startsWith("ag_00"));
+        const list = JSON.parse(localStorage.getItem("prg_agendamentos") || "[]");
+        // Remove quaisquer agendamentos de teste legados (ag_001, etc.)
+        const filtered = list.filter(item => !String(item.id).startsWith("ag_00") && !item.titulo?.toLowerCase().includes("defesa de tese fict"));
         localStorage.setItem("prg_agendamentos", JSON.stringify(filtered));
       } catch (e) {
         localStorage.setItem("prg_agendamentos", JSON.stringify([]));
@@ -579,10 +611,13 @@ class StorageService {
       }
     }
     const raw = JSON.parse(localStorage.getItem("prg_agendamentos") || "[]");
-    return raw.map(item => ({
-      ...item,
-      auditorioId: this.normalizeSpaceId(item.auditorioId)
-    }));
+    // Filtra e descarta quaisquer agendamentos legados de teste fictícios
+    return raw
+      .filter(item => !String(item.id).startsWith("ag_00") && !item.titulo?.toLowerCase().includes("defesa de tese fict"))
+      .map(item => ({
+        ...item,
+        auditorioId: this.normalizeSpaceId(item.auditorioId)
+      }));
   }
 
   async getAgendamentoById(id) {
@@ -626,6 +661,16 @@ class StorageService {
   async createAgendamento(data) {
     const normalizedAudId = this.normalizeSpaceId(data.auditorioId);
     
+    // Validação estrita: Apenas servidor docente ou técnico pode reservar (SIAPE obrigatório)
+    const siapeStr = String(data.siape || "").trim();
+    if (!siapeStr || !/^[0-9]{5,8}$/.test(siapeStr)) {
+      throw new Error("Matrícula SIAPE obrigatória e inválida! Apenas servidores docentes ou técnico-administrativos da UFPB podem solicitar reservas (digite entre 5 e 8 números).");
+    }
+
+    if (!data.vinculo || !data.vinculo.trim()) {
+      throw new Error("Informe o vínculo institucional do servidor solicitante (Docente ou Técnico-Administrativo).");
+    }
+
     // 1. Checa Bloqueio de Horário (Aulas em Período Letivo, Manutenção, etc.)
     const bloqueio = await this.checkBlockConflict(normalizedAudId, data.data, data.horaInicio, data.horaFim);
     if (bloqueio) {
@@ -646,6 +691,8 @@ class StorageService {
     const novoAgendamento = {
       id,
       ...data,
+      siape: siapeStr,
+      vinculo: data.vinculo.trim(),
       auditorioId: normalizedAudId,
       status: data.status || "confirmado",
       notificacoes: data.notificacoes || [],
@@ -715,6 +762,53 @@ class StorageService {
     return null;
   }
 
+  /**
+   * Confirma a reserva indicando quais recursos e equipamentos estão realmente disponíveis na sala
+   */
+  async confirmarReservaComRecursos(id, { recursosDisponiveis, parecer, gestorNome, gestorEmail }) {
+    return await this.updateAgendamento(id, {
+      status: "confirmado",
+      recursosConfirmados: recursosDisponiveis || [],
+      parecerGestor: parecer || "Reserva aprovada e recursos da sala validados pela gestão.",
+      confirmadoPor: gestorNome || "Gestor",
+      confirmadoEm: new Date().toISOString()
+    });
+  }
+
+  /**
+   * Solicita complementação de informações ao interessado
+   */
+  async solicitarComplementacao(id, { solicitacao, gestorNome, gestorEmail }) {
+    return await this.updateAgendamento(id, {
+      status: "pendente_informacoes",
+      solicitacaoComplementacao: {
+        texto: solicitacao,
+        solicitadoPor: gestorNome || "Gestor",
+        data: new Date().toISOString()
+      }
+    });
+  }
+
+  /**
+   * Nega / Recusa a solicitação de reserva com justificativa
+   */
+  async rejeitarReserva(id, { motivo, gestorNome, gestorEmail }) {
+    return await this.updateAgendamento(id, {
+      status: "rejeitado",
+      motivoRejeicao: motivo || "Reserva não autorizada pela gestão.",
+      rejeitadoPor: gestorNome || "Gestor",
+      rejeitadoEm: new Date().toISOString()
+    });
+  }
+
+  /**
+   * Limpa todos os agendamentos do sistema
+   */
+  clearAllAgendamentos() {
+    localStorage.setItem("prg_agendamentos", JSON.stringify([]));
+    return [];
+  }
+
   async deleteAgendamento(id) {
     if (window.isFirebaseActive && window.fbDb) {
       try {
@@ -755,9 +849,17 @@ class StorageService {
       throw new Error("O e-mail deve pertencer obrigatoriamente ao domínio institucional @academico.ufpb.br");
     }
 
-    // Regra: Somente o Gestor Principal pode conceder o perfil de Administrador / Gestor SisInfra
-    if (data.perfil === "admin" && window.authService && !window.authService.isMasterAdmin()) {
-      throw new Error("Apenas o Gestor Principal (Prof. Dr. Hidelbrando Diógenes) pode cadastrar novos Gestores / Administradores.");
+    if (!data.nome || !data.nome.trim()) {
+      throw new Error("O nome completo é obrigatório.");
+    }
+
+    if (!data.siape || !data.siape.trim()) {
+      throw new Error("A matrícula SIAPE é obrigatória para o cadastro do servidor.");
+    }
+
+    // Regra: Somente o Gestor pode cadastrar novos usuários ou conceder acesso
+    if (window.authService && !window.authService.isGestor()) {
+      throw new Error("Apenas o Gestor pode conceder acessos e cadastrar usuários no sistema.");
     }
 
     const list = await this.getUsuarios();
@@ -767,11 +869,27 @@ class StorageService {
     }
 
     const id = "usr_" + Date.now();
+    const perfilNorm = (data.perfil === "gestor") ? "gestor" : "usuario";
+
     const novoUsuario = {
       id,
       ...data,
+      nome: (data.nome || "").trim(),
+      siape: (data.siape || "").trim(),
       email: emailNorm,
+      setor: (data.setor || "PRG / UFPB").trim(),
+      perfil: perfilNorm, // Apenas duas categorias: 'gestor' ou 'usuario'
+      cargo: perfilNorm === "gestor" ? "Gestor" : "Usuário",
+      permissoes: perfilNorm === "gestor"
+        ? { aprovar: true, checklist: true, bloqueio: true, usuarios: true }
+        : {
+            aprovar: !!data.permissoes?.aprovar,
+            checklist: !!data.permissoes?.checklist,
+            bloqueio: !!data.permissoes?.bloqueio,
+            usuarios: !!data.permissoes?.usuarios
+          },
       status: data.status || "ativo",
+      senha: data.senha || "ufpb123",
       criadoEm: new Date().toISOString()
     };
 
@@ -794,22 +912,30 @@ class StorageService {
     const list = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
     const target = list.find(u => u.id === id);
 
-    // Proteção ao Gestor Principal Permanente
+    // Proteção ao Gestor Permanente
     if (target) {
       const em = (target.email || "").toLowerCase();
-      if (target.isMasterAdmin || em === "hjfd@academico.ufpb.br" || em === "hjfd@cademico.ufpb.br") {
+      if (em === "hjfd@academico.ufpb.br" || em === "hjfd@cademico.ufpb.br") {
         if (data.status === "inativo") {
-          throw new Error("O Gestor Principal permanente (Prof. Dr. Hidelbrando Diógenes) não pode ser desativado.");
+          throw new Error("O Gestor permanente (Hidelbrando Diógenes) não pode ser desativado.");
         }
-        if (data.perfil && data.perfil !== "admin") {
-          throw new Error("O Gestor Principal deve manter obrigatoriamente o perfil de Administrador Geral.");
+        if (data.perfil && data.perfil !== "gestor") {
+          throw new Error("O Gestor permanente deve manter obrigatoriamente a categoria de Gestor.");
         }
       }
     }
 
+    const updatedData = { ...data };
+    if (updatedData.perfil === "gestor") {
+      updatedData.cargo = "Gestor";
+      updatedData.permissoes = { aprovar: true, checklist: true, bloqueio: true, usuarios: true };
+    } else if (updatedData.perfil === "usuario") {
+      updatedData.cargo = "Usuário";
+    }
+
     if (window.isFirebaseActive && window.fbDb) {
       try {
-        await window.fbDb.collection("usuarios").doc(id).update(data);
+        await window.fbDb.collection("usuarios").doc(id).update(updatedData);
       } catch (err) {
         console.error("Erro ao atualizar usuário no Firestore:", err);
       }
@@ -817,7 +943,7 @@ class StorageService {
 
     const idx = list.findIndex(u => u.id === id);
     if (idx >= 0) {
-      list[idx] = { ...list[idx], ...data };
+      list[idx] = { ...list[idx], ...updatedData };
       localStorage.setItem("prg_usuarios", JSON.stringify(list));
       return list[idx];
     }
@@ -828,11 +954,11 @@ class StorageService {
     const list = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
     const target = list.find(u => u.id === id);
 
-    // Proteção ao Gestor Principal Permanente
+    // Proteção ao Gestor Permanente
     if (target) {
       const em = (target.email || "").toLowerCase();
-      if (target.isMasterAdmin || em === "hjfd@academico.ufpb.br" || em === "hjfd@cademico.ufpb.br") {
-        throw new Error("Ação não permitida: O Gestor Principal permanente (Prof. Dr. Hidelbrando Diógenes) não pode ser excluído.");
+      if (em === "hjfd@academico.ufpb.br" || em === "hjfd@cademico.ufpb.br") {
+        throw new Error("Ação não permitida: O Gestor permanente (Hidelbrando Diógenes) não pode ser excluído.");
       }
     }
 
