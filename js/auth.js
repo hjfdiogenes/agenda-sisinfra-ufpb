@@ -102,10 +102,11 @@ class AuthService {
     }
 
     const usuarios = await window.storageService.getUsuarios();
-    let user = usuarios.find(u => String(u.siape || "").trim() === siape);
+    let user = usuarios.find(u => String(u.siape || "").replace(/\D/g, "") === siape);
 
     // Auto-recuperação do Gestor Único se for o SIAPE 1046483
     if (siape === "1046483") {
+      const gestorCustomPwd = localStorage.getItem("prg_pwd_1046483");
       if (!user) {
         user = {
           id: "usr_gestor_hidelbrando",
@@ -117,8 +118,8 @@ class AuthService {
           perfil: "gestor",
           permissoes: { aprovar: true, checklist: true, bloqueio: true, usuarios: true },
           status: "ativo",
-          senha: "ufpb123",
-          primeiroAcesso: true
+          senha: gestorCustomPwd || "ufpb123",
+          primeiroAcesso: !gestorCustomPwd
         };
         try {
           const list = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
@@ -131,6 +132,44 @@ class AuthService {
         user.nome = "Hidelbrando Diógenes";
         user.status = "ativo";
         user.permissoes = { aprovar: true, checklist: true, bloqueio: true, usuarios: true };
+        if (gestorCustomPwd) {
+          user.senha = gestorCustomPwd;
+          user.primeiroAcesso = false;
+        }
+      }
+    }
+
+    // Auto-recuperação do Servidor Álvaro se for o SIAPE 1349975
+    if (siape === "1349975") {
+      const alvaroCustomPwd = localStorage.getItem("prg_pwd_1349975");
+      if (!user) {
+        user = {
+          id: "usr_alvaro_1349975",
+          nome: "Álvaro",
+          siape: "1349975",
+          email: "alvaro@ufpb.br",
+          setor: "PRG / UFPB",
+          cargo: "Usuário",
+          perfil: "usuario",
+          permissoes: { aprovar: true, checklist: true, bloqueio: false, usuarios: false },
+          status: "ativo",
+          senha: alvaroCustomPwd || "ufpb123",
+          primeiroAcesso: !alvaroCustomPwd
+        };
+        try {
+          const list = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
+          list.push(user);
+          localStorage.setItem("prg_usuarios", JSON.stringify(list));
+        } catch (e) {}
+      } else {
+        user.perfil = "usuario";
+        user.cargo = "Usuário";
+        user.nome = user.nome || "Álvaro";
+        user.status = "ativo";
+        if (alvaroCustomPwd) {
+          user.senha = alvaroCustomPwd;
+          user.primeiroAcesso = false;
+        }
       }
     }
 
@@ -142,10 +181,16 @@ class AuthService {
       throw new Error("Seu acesso está inativo no momento. Entre em contato com o Gestor (Hidelbrando Diógenes).");
     }
 
-    // Validação da Senha
-    if (user.senha && user.senha !== senha) {
-      throw new Error("Senha incorreta. Verifique sua senha institucional e tente novamente.");
+    // Validação Estrita da Senha (com persistência isolada por matrícula SIAPE)
+    const savedCustomPwd = localStorage.getItem("prg_pwd_" + siape);
+    const expectedPwd = savedCustomPwd || user.senha || "ufpb123";
+
+    if (senha !== expectedPwd) {
+      throw new Error("Senha incorreta. Verifique suas credenciais e tente novamente.");
     }
+
+    const hasCustomPwd = !!savedCustomPwd;
+    const isFirstAccess = !hasCustomPwd && (user.primeiroAcesso !== false || user.senha === "ufpb123");
 
     // Configuração do Usuário Autenticado
     this.currentUser = {
@@ -160,11 +205,11 @@ class AuthService {
         ? { aprovar: true, checklist: true, bloqueio: true, usuarios: true }
         : (user.permissoes || { aprovar: true, checklist: false, bloqueio: false, usuarios: false }),
       status: user.status,
-      primeiroAcesso: (user.primeiroAcesso !== false && (user.primeiroAcesso === true || user.senha === "ufpb123"))
+      primeiroAcesso: isFirstAccess
     };
 
     // Necessidade de troca de senha no primeiro acesso
-    const needsPasswordChange = !!this.currentUser.primeiroAcesso;
+    const needsPasswordChange = isFirstAccess;
 
     if (!needsPasswordChange) {
       sessionStorage.setItem("prg_current_user", JSON.stringify(this.currentUser));
@@ -186,8 +231,15 @@ class AuthService {
       throw new Error("A nova senha deve possuir pelo menos 6 caracteres.");
     }
 
-    await window.storageService.updateUsuarioSenha(this.currentUser.id, clean);
+    const siape = String(this.currentUser.siape || "").replace(/\D/g, "");
+    if (siape) {
+      localStorage.setItem("prg_pwd_" + siape, clean);
+    }
+
+    this.currentUser.senha = clean;
     this.currentUser.primeiroAcesso = false;
+
+    await window.storageService.updateUsuarioSenha(siape || this.currentUser.id, clean);
     sessionStorage.setItem("prg_current_user", JSON.stringify(this.currentUser));
     window.dispatchEvent(new CustomEvent("auth-state-changed", { detail: this.currentUser }));
     return this.currentUser;

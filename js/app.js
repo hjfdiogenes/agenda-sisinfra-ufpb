@@ -1887,6 +1887,10 @@ class AppManager {
     }
 
     try {
+      const cleanSiape = String(u.siape || "").replace(/\D/g, "");
+      if (cleanSiape) {
+        localStorage.removeItem("prg_pwd_" + cleanSiape);
+      }
       await window.storageService.updateUsuario(id, { senha: "ufpb123", primeiroAcesso: true });
       this.showToast(`Senha de ${u.nome} redefinida para 'ufpb123' com sucesso!`, "success");
       this.renderUsuariosList();
