@@ -127,12 +127,16 @@
         <!-- Logado -->
         <div id="user-logged-container" class="hidden flex items-center gap-3 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg">
           <div class="text-right">
-            <div id="user-name-display" class="font-bold text-xs text-slate-800">Operador</div>
-            <span id="user-badge-display" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-100 text-blue-800">
-              Operador
-            </span>
+            <div id="user-name-display" class="font-bold text-xs text-slate-800">Hidelbrando Diógenes</div>
+            <div class="flex items-center gap-1.5 justify-end">
+              <span id="user-badge-display" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-100 text-blue-800">Gestor</span>
+              <span id="user-siape-display" class="text-[10px] font-mono font-bold text-slate-500">SIAPE 1046483</span>
+            </div>
           </div>
-          <button id="btn-logout" class="text-xs text-red-600 hover:text-red-800 font-semibold p-1 hover:bg-red-50 rounded" title="Sair do Sistema">
+          <button id="btn-open-trocar-senha" class="text-xs text-slate-600 hover:text-ufpb-blue font-semibold p-1.5 hover:bg-slate-200/60 rounded cursor-pointer" title="Alterar Senha de Acesso">
+            🔑
+          </button>
+          <button id="btn-logout" class="text-xs text-red-600 hover:text-red-800 font-semibold p-1 hover:bg-red-50 rounded cursor-pointer" title="Sair do Sistema">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
@@ -776,152 +780,96 @@
 
   <!-- ================= MODAIS ================= -->
 
-  <!-- 1. MODAL LOGIN (PADRÃO OFICIAL SISINFRA UFPB) -->
+  <!-- 1. MODAL LOGIN (AUTENTICAÇÃO POR MATRÍCULA SIAPE E SENHA) -->
   <div id="modal-login" class="modal-overlay">
-    <div class="modal-container p-6 sm:p-10 max-w-md bg-white rounded-2xl shadow-xl relative text-center">
-      <button id="btn-close-login" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold text-xl">✕</button>
+    <div class="modal-container p-6 sm:p-8 max-w-md bg-white rounded-2xl shadow-2xl relative text-left border border-slate-200">
+      <button id="btn-close-login" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold text-xl cursor-pointer">✕</button>
 
-      <!-- Título Centralizado conforme SisInfra Oficial -->
-      <div class="mb-6">
-        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Acesso ao SisInfra</h2>
-        <p class="text-xs text-slate-500 mt-1">Agenda de Espaços e Aulas • PRG / UFPB</p>
+      <!-- Cabeçalho Institucional -->
+      <div class="mb-5 text-center">
+        <div class="inline-flex p-3 bg-blue-50 text-ufpb-blue rounded-full mb-3 shadow-2xs">
+          <svg class="w-8 h-8 text-[#2563eb]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+        </div>
+        <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Acesso ao SisInfra</h2>
+        <p class="text-xs text-slate-500 mt-1">Autenticação de Servidores por Matrícula SIAPE</p>
       </div>
 
-      <!-- Card Acesso UFPB com escudo azul -->
-      <div class="bg-[#f8faff] border border-[#dbe6f6] rounded-xl p-5 mb-6 text-left">
-        <div class="flex items-start gap-3.5">
-          <!-- Ícone do Escudo UFPB -->
-          <div class="flex-shrink-0 mt-0.5">
-            <svg class="w-7 h-7 text-[#2563eb]" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 6h2v2h-2V7zm0 4h2v6h-2v-6z"/>
-            </svg>
+      <!-- Formulário de Login por Matrícula SIAPE -->
+      <form id="form-login-siape" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Matrícula SIAPE *</label>
+          <div class="relative">
+            <input type="text" id="login-siape" required placeholder="Digite sua matrícula (ex: 1046483)" class="w-full bg-slate-50 border border-slate-300 rounded-lg pl-3.5 pr-14 py-2.5 text-xs text-slate-800 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-ufpb-blue focus:bg-white transition-all">
+            <span class="absolute right-3 top-2.5 text-slate-400 text-xs font-bold font-mono">SIAPE</span>
           </div>
-          <div>
-            <h3 class="font-bold text-sm text-slate-900">Acesso UFPB</h3>
-            <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
-              O acesso ao sistema deve ser realizado por meio do e-mail acadêmico da UFPB (<strong class="text-slate-800">@academico.ufpb.br</strong>).
-            </p>
-          </div>
+          <p class="text-[10px] text-slate-400 mt-1">Gestor do Sistema: matrícula <span class="font-mono text-slate-700 font-bold">1046483</span></p>
         </div>
 
-        <div class="border-t border-[#e2eaf5] my-3.5"></div>
-
-        <div class="flex items-start gap-2 text-[11.5px] text-slate-500 leading-relaxed">
-          <span class="flex-shrink-0 text-slate-400 font-bold">ℹ</span>
-          <p>
-            Caso ainda não possua acesso ao Sisinfra, solicite o seu cadastro ao <strong class="text-slate-700">gestor do seu setor</strong>.
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Senha Institucional *</label>
+          <input type="password" id="login-senha" required placeholder="Digite sua senha de acesso" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue focus:bg-white transition-all">
+          <p class="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1">
+            <span>ℹ️</span> Senha padrão inicial: <span class="font-mono text-blue-700 font-bold bg-blue-50 px-1 rounded">ufpb123</span> (troca obrigatória no 1º acesso).
           </p>
         </div>
-      </div>
 
-      <!-- Botão Redondo Oficial: Continuar com o Google -->
-      <div class="flex flex-col items-center">
-        <button id="btn-login-google" type="button" class="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-50 text-slate-800 text-sm font-medium py-3 px-6 rounded-full border border-slate-300 hover:border-slate-400 shadow-2xs hover:shadow-xs transition-all cursor-pointer">
-          <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        <button type="submit" id="btn-submit-login" class="w-full bg-ufpb-blue hover:bg-ufpb-navy text-white text-xs font-bold py-3 px-4 rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer mt-3">
+          <span>Acessar o Sistema</span>
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
           </svg>
-          <span>Continuar com o Google</span>
         </button>
+      </form>
 
-        <!-- Rodapé Oficial SisInfra -->
-        <div class="mt-8 text-center">
-          <a href="#" onclick="alert('Sistema oficial da Pró-Reitoria de Graduação (PRG) e SisInfra da Universidade Federal da Paraíba (UFPB).'); return false;" class="text-xs text-slate-400 hover:text-slate-600 underline">
-            Termos de Uso e Política de Privacidade
-          </a>
-        </div>
+      <!-- Informação Institucional -->
+      <div class="mt-6 pt-3 border-t border-slate-100 text-center">
+        <p class="text-[11px] text-slate-400">
+          Acesso restrito ao Gestor e servidores autorizados pela PRG / UFPB.
+        </p>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: GOOGLE ACCOUNT CHOOSER (OFICIAL SISINFRA UFPB) -->
-  <div id="modal-google-prompt" class="modal-overlay">
-    <div class="modal-container p-6 sm:p-7 max-w-md bg-white rounded-2xl shadow-2xl relative text-left border border-slate-200">
-      <button onclick="appManager.closeModal('modal-google-prompt')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold text-lg p-1">✕</button>
-
-      <!-- Google Branding Header -->
-      <div class="flex items-center gap-3 mb-2">
-        <svg class="w-7 h-7 flex-shrink-0" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-        </svg>
+  <!-- MODAL: PRIMEIRO ACESSO / TROCA DE SENHA OBRIGATÓRIA -->
+  <div id="modal-primeiro-acesso" class="modal-overlay">
+    <div class="modal-container p-6 sm:p-8 max-w-md bg-white rounded-2xl shadow-2xl relative text-left border border-slate-200">
+      <!-- Cabeçalho -->
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-lg flex-shrink-0">
+          🔑
+        </div>
         <div>
-          <h3 class="text-base font-bold text-slate-800">Fazer login com o Google</h3>
-          <p class="text-xs text-slate-500">Escolha uma conta para prosseguir para a <strong class="text-slate-700">Agenda SisInfra (PRG / UFPB)</strong></p>
+          <h3 class="text-base font-bold text-slate-900">Primeiro Acesso ao Sistema</h3>
+          <p class="text-xs text-slate-500">Cadastre sua senha pessoal de segurança</p>
         </div>
       </div>
 
-      <div class="h-px bg-slate-100 my-4"></div>
+      <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl mb-4 text-xs text-amber-900 leading-relaxed">
+        Olá, <strong id="primeiro-acesso-nome">Servidor</strong> (SIAPE: <span id="primeiro-acesso-siape" class="font-mono font-bold"></span>). Para sua segurança, você deve cadastrar uma nova senha pessoal para substituir a senha padrão <span class="font-mono font-bold">ufpb123</span>.
+      </div>
 
-      <!-- Contas do Google -->
-      <div class="space-y-3">
-        <!-- Conta Principal Gestor (1 Clique direto sem senha) -->
-        <button id="btn-select-account-gestor" type="button" class="w-full text-left p-3.5 rounded-xl border-2 border-blue-200 bg-blue-50/60 hover:bg-blue-100 hover:border-blue-400 transition-all flex items-center justify-between group cursor-pointer shadow-xs">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-ufpb-blue text-white font-bold flex items-center justify-center text-sm shadow-xs flex-shrink-0 group-hover:scale-105 transition-transform">
-              H
-            </div>
-            <div>
-              <div class="font-bold text-sm text-slate-900 flex items-center gap-2">
-                <span>Hidelbrando Diógenes</span>
-                <span class="text-[10px] bg-blue-600 text-white font-bold px-2 py-0.5 rounded-full">Gestor</span>
-              </div>
-              <div class="text-xs text-slate-600 font-mono">hjfd@academico.ufpb.br</div>
-              <div class="text-[11px] text-blue-700 font-medium mt-0.5 flex items-center gap-1">
-                <span>✓</span> Clique aqui para entrar imediatamente
-              </div>
-            </div>
-          </div>
-          <svg class="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-
-        <!-- Usar Outra Conta Institucional @academico.ufpb.br -->
+      <form id="form-primeiro-acesso" class="space-y-4">
         <div>
-          <button id="btn-toggle-other-account" type="button" class="w-full text-left p-3 rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center gap-3 cursor-pointer text-slate-700">
-            <div class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-sm flex-shrink-0">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
-            </div>
-            <div class="text-xs font-semibold text-slate-700">
-              Usar outra conta Google institucional (@academico.ufpb.br)
-            </div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Nova Senha Pessoal *</label>
+          <input type="password" id="nova-senha-input" required minlength="6" placeholder="Mínimo de 6 caracteres" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue focus:bg-white transition-all">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Confirmar Nova Senha *</label>
+          <input type="password" id="confirma-nova-senha-input" required minlength="6" placeholder="Repita a nova senha exatamente igual" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue focus:bg-white transition-all">
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" onclick="appManager.closeModal('modal-primeiro-acesso')" class="text-xs font-bold text-slate-500 hover:text-slate-700 px-4 py-2 cursor-pointer">
+            Cancelar
           </button>
-
-          <!-- Formulário simplificado de outra conta sem senha -->
-          <form id="form-other-google-account" class="hidden mt-2 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-            <label class="block text-xs font-semibold text-slate-700">Digite seu e-mail @academico.ufpb.br:</label>
-            <div class="flex gap-2">
-              <input type="email" id="other-google-email" required placeholder="ex: servidor@academico.ufpb.br" class="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white font-mono focus:ring-2 focus:ring-ufpb-blue focus:outline-none">
-              <button type="submit" class="bg-ufpb-blue hover:bg-ufpb-navy text-white text-xs font-bold px-4 py-2 rounded-lg cursor-pointer">
-                Entrar
-              </button>
-            </div>
-            <p class="text-[10px] text-slate-400">Verificação automática do domínio acadêmico institucional UFPB.</p>
-          </form>
+          <button type="submit" id="btn-salvar-nova-senha" class="bg-ufpb-blue hover:bg-ufpb-navy text-white text-xs font-bold px-5 py-2.5 rounded-lg shadow-sm cursor-pointer">
+            Salvar Senha e Entrar
+          </button>
         </div>
-      </div>
-
-      <!-- Rodapé: Configuração Google Cloud OAuth 2.0 Client ID -->
-      <div class="mt-5 pt-3 border-t border-slate-100 text-center">
-        <button id="btn-toggle-gclient-config" type="button" class="text-[11px] text-slate-400 hover:text-slate-600 underline cursor-pointer">
-          ⚙️ Conectar Google Cloud OAuth Client ID (para popup oficial)
-        </button>
-        <div id="box-gclient-config" class="hidden mt-2 text-left p-3 bg-slate-50 rounded-lg border border-slate-200">
-          <label class="block text-[11px] font-semibold text-slate-700 mb-1">Google OAuth 2.0 Client ID:</label>
-          <div class="flex gap-2">
-            <input type="text" id="input-google-client-id" placeholder="ex: 123456789-xyz.apps.googleusercontent.com" class="flex-1 text-[11px] border border-slate-300 rounded px-2 py-1.5 font-mono">
-            <button id="btn-save-gclient-id" type="button" class="bg-slate-700 hover:bg-slate-800 text-white text-[11px] font-bold px-3 py-1.5 rounded cursor-pointer">Salvar</button>
-          </div>
-          <p class="text-[10px] text-slate-400 mt-1">Insira seu Client ID do Google Cloud Console para acionar o popup nativo do Google no seu domínio.</p>
-        </div>
-      </div>
+      </form>
     </div>
   </div>
 
@@ -966,9 +914,8 @@
           </div>
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">E-mail Institucional Google (@academico.ufpb.br) *</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1">E-mail Institucional (@academico.ufpb.br ou @ufpb.br) *</label>
           <input type="email" id="usr-email" required placeholder="maria.souza@academico.ufpb.br" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
-          <p class="text-[10px] text-slate-400 mt-1">O usuário poderá autenticar diretamente com o botão "Continuar com o Google".</p>
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">Setor / Departamento *</label>
@@ -977,9 +924,13 @@
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">Categoria de Acesso *</label>
           <select id="usr-perfil" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-ufpb-blue">
-            <option value="gestor">Gestor (Acesso Total e Gestão do Sistema)</option>
-            <option value="usuario">Usuário (Permissões Parametrizadas)</option>
+            <option value="usuario">Usuário Autorizado (Permissões Parametrizadas)</option>
           </select>
+        </div>
+
+        <!-- Alerta de Senha Inicial Padrão -->
+        <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 leading-relaxed">
+          🔑 <strong>Credenciais de Acesso:</strong> O usuário fará login utilizando a <strong>Matrícula SIAPE</strong> informada. A senha inicial padrão será <span class="font-mono font-bold bg-white px-1.5 py-0.5 rounded border border-blue-300">ufpb123</span> e o sistema exigirá a troca obrigatória de senha no primeiro login.
         </div>
 
         <!-- Painel de Parametrização de Permissões (Configurado pelo Gestor) -->

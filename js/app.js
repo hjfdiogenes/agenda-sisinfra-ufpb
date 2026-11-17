@@ -125,12 +125,17 @@ class AppManager {
     const loginBtn = document.getElementById("btn-open-login");
     const logoutBtn = document.getElementById("btn-logout");
     const closeLoginBtn = document.getElementById("btn-close-login");
-    const googleLoginBtn = document.getElementById("btn-login-google");
-    const reqAccessBtn = document.getElementById("btn-request-access-now");
+    const formLoginSiape = document.getElementById("form-login-siape");
+    const formPrimeiroAcesso = document.getElementById("form-primeiro-acesso");
+    const btnOpenTrocarSenha = document.getElementById("btn-open-trocar-senha");
 
     if (loginBtn) {
       loginBtn.addEventListener("click", () => {
         this.openModal("modal-login");
+        setTimeout(() => {
+          const siapeInput = document.getElementById("login-siape");
+          if (siapeInput) siapeInput.focus();
+        }, 100);
       });
     }
 
@@ -147,139 +152,99 @@ class AppManager {
       });
     }
 
-    // Botão Oficial: "Continuar com o Google"
-    if (googleLoginBtn) {
-      googleLoginBtn.addEventListener("click", async () => {
-        try {
-          googleLoginBtn.disabled = true;
-          // Tenta autenticação real com Google (Firebase Auth ou Google Identity Services OAuth)
-          const loggedUser = await window.authService.loginWithGoogle();
-          if (loggedUser) {
-            this.closeModal("modal-login");
-            this.showToast("Login com Google Institucional realizado com sucesso!", "success");
-            return;
-          }
-        } catch (err) {
-          if (err.code === "AUTH_NOT_AUTHORIZED") {
-            this.pendingAuthUser = { email: err.userEmail, name: err.userName };
-            const unauthEmailEl = document.getElementById("unauth-user-email");
-            if (unauthEmailEl) unauthEmailEl.textContent = err.userEmail;
-            this.closeModal("modal-login");
-            this.openModal("modal-acesso-pendente");
-            return;
-          } else if (err.code === "auth/popup-closed-by-user") {
-            this.showToast("Janela do Google fechada.", "info");
-            return;
-          } else {
-            alert(err.message || "Falha na autenticação Google.");
-            return;
-          }
-        } finally {
-          googleLoginBtn.disabled = false;
-        }
-
-        // Se nem Firebase nem Google Client ID estiverem ativos:
-        // Abre o Seletor Oficial de Contas Google institucional (@academico.ufpb.br)
-        this.closeModal("modal-login");
-        this.openModal("modal-google-prompt");
-      });
-    }
-
-    // Botão 1-Clique: Hidelbrando Diógenes (Gestor)
-    const btnSelectGestor = document.getElementById("btn-select-account-gestor");
-    if (btnSelectGestor) {
-      btnSelectGestor.addEventListener("click", async () => {
-        try {
-          btnSelectGestor.disabled = true;
-          await window.authService.simulateGoogleLogin("hjfd@academico.ufpb.br");
-          this.closeModal("modal-google-prompt");
-          this.closeModal("modal-login");
-          this.showToast("Autenticado via Google como Gestor (Hidelbrando Diógenes)!", "success");
-        } catch (err) {
-          alert(err.message || "Erro ao conectar conta Google institucional.");
-        } finally {
-          btnSelectGestor.disabled = false;
+    // Botão para abrir modal de alteração de senha a qualquer momento
+    if (btnOpenTrocarSenha) {
+      btnOpenTrocarSenha.addEventListener("click", () => {
+        const user = window.authService.getCurrentUser();
+        if (user) {
+          const nomeEl = document.getElementById("primeiro-acesso-nome");
+          const siapeEl = document.getElementById("primeiro-acesso-siape");
+          if (nomeEl) nomeEl.textContent = user.nome;
+          if (siapeEl) siapeEl.textContent = user.siape;
+          this.openModal("modal-primeiro-acesso");
         }
       });
     }
 
-    // Alternar Formulário de Outra Conta Google
-    const btnToggleOther = document.getElementById("btn-toggle-other-account");
-    const formOther = document.getElementById("form-other-google-account");
-    if (btnToggleOther && formOther) {
-      btnToggleOther.addEventListener("click", () => {
-        formOther.classList.toggle("hidden");
-        const inp = document.getElementById("other-google-email");
-        if (!formOther.classList.contains("hidden") && inp) {
-          inp.focus();
-        }
-      });
-    }
-
-    // Formulário de Outra Conta Google Institucional (@academico.ufpb.br)
-    if (formOther) {
-      formOther.addEventListener("submit", async (e) => {
+    // Formulário de Login por Matrícula SIAPE e Senha
+    if (formLoginSiape) {
+      formLoginSiape.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const inp = document.getElementById("other-google-email");
-        const email = inp ? inp.value.trim() : "";
-        if (!email) return;
+        const siapeInput = document.getElementById("login-siape");
+        const senhaInput = document.getElementById("login-senha");
+        const siape = siapeInput ? siapeInput.value.trim() : "";
+        const senha = senhaInput ? senhaInput.value : "";
+        const submitBtn = document.getElementById("btn-submit-login");
 
-        const submitBtn = formOther.querySelector("button[type='submit']");
         try {
           if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.textContent = "Validando...";
+            submitBtn.innerHTML = "<span>Autenticando...</span>";
           }
-          await window.authService.simulateGoogleLogin(email);
-          this.closeModal("modal-google-prompt");
-          this.closeModal("modal-login");
-          this.showToast("Autenticado via Google Workspace UFPB!", "success");
-        } catch (err) {
-          if (err.code === "AUTH_NOT_AUTHORIZED") {
-            this.pendingAuthUser = { email: err.userEmail, name: err.userName };
-            const unauthEmailEl = document.getElementById("unauth-user-email");
-            if (unauthEmailEl) unauthEmailEl.textContent = err.userEmail;
-            this.closeModal("modal-google-prompt");
-            this.openModal("modal-acesso-pendente");
+
+          const result = await window.authService.loginWithSiape(siape, senha);
+
+          if (result.needsPasswordChange) {
+            // Primeiro acesso: exige alteração de senha
+            const nomeEl = document.getElementById("primeiro-acesso-nome");
+            const siapeEl = document.getElementById("primeiro-acesso-siape");
+            if (nomeEl) nomeEl.textContent = result.user.nome;
+            if (siapeEl) siapeEl.textContent = result.user.siape;
+
+            this.closeModal("modal-login");
+            this.openModal("modal-primeiro-acesso");
+            this.showToast("Primeiro acesso: cadastre sua nova senha institucional.", "info");
           } else {
-            alert(err.message || "Acesso negado.");
+            // Login concluído com sucesso
+            this.closeModal("modal-login");
+            this.showToast(`Bem-vindo, ${result.user.nome}!`, "success");
           }
+        } catch (err) {
+          alert(err.message || "Erro na autenticação.");
         } finally {
           if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.textContent = "Entrar";
+            submitBtn.innerHTML = `<span>Acessar o Sistema</span><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>`;
           }
         }
       });
     }
 
-    // Configuração Google OAuth Client ID Oficial (Opcional)
-    const btnToggleGClient = document.getElementById("btn-toggle-gclient-config");
-    const boxGClient = document.getElementById("box-gclient-config");
-    const inputGClient = document.getElementById("input-google-client-id");
-    const btnSaveGClient = document.getElementById("btn-save-gclient-id");
-    if (btnToggleGClient && boxGClient) {
-      btnToggleGClient.addEventListener("click", () => {
-        boxGClient.classList.toggle("hidden");
-        if (inputGClient) inputGClient.value = window.authService.getGoogleClientId();
-      });
-    }
-    if (btnSaveGClient && inputGClient) {
-      btnSaveGClient.addEventListener("click", () => {
-        const val = inputGClient.value.trim();
-        window.authService.setGoogleClientId(val);
-        this.showToast(val ? "Google Client ID salvo! Login oficial ativo." : "Google Client ID removido.", "success");
-        if (boxGClient) boxGClient.classList.add("hidden");
-      });
-    }
+    // Formulário de Primeiro Acesso (Definir Nova Senha)
+    if (formPrimeiroAcesso) {
+      formPrimeiroAcesso.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const novaSenha = document.getElementById("nova-senha-input")?.value || "";
+        const confirmaSenha = document.getElementById("confirma-nova-senha-input")?.value || "";
+        const submitBtn = document.getElementById("btn-salvar-nova-senha");
 
-    // Botão de Solicitar Acesso por E-mail ao Gestor
-    if (reqAccessBtn) {
-      reqAccessBtn.addEventListener("click", () => {
-        const pEmail = this.pendingAuthUser?.email || "usuario@academico.ufpb.br";
-        const pName = this.pendingAuthUser?.name || "";
-        this.closeModal("modal-acesso-pendente");
-        window.emailService.requestAccessEmail(pEmail, pName);
+        if (novaSenha.length < 6) {
+          alert("A nova senha deve possuir no mínimo 6 caracteres.");
+          return;
+        }
+
+        if (novaSenha !== confirmaSenha) {
+          alert("As senhas digitadas não conferem. Por favor, digite a mesma senha em ambos os campos.");
+          return;
+        }
+
+        try {
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Salvando senha...";
+          }
+
+          await window.authService.changePassword(novaSenha);
+          this.closeModal("modal-primeiro-acesso");
+          this.showToast("Nova senha cadastrada com sucesso! Bem-vindo ao SisInfra.", "success");
+        } catch (err) {
+          alert(err.message || "Erro ao salvar nova senha.");
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Salvar Senha e Entrar";
+          }
+        }
       });
     }
   }
@@ -293,6 +258,7 @@ class AppManager {
     const unloggedContainer = document.getElementById("user-unlogged-container");
     const userNameEl = document.getElementById("user-name-display");
     const userBadgeEl = document.getElementById("user-badge-display");
+    const userSiapeEl = document.getElementById("user-siape-display");
     const authAlertBooking = document.getElementById("auth-alert-booking");
 
     // Abas com controle de acesso (Público x Equipe Autorizada)
@@ -305,6 +271,7 @@ class AppManager {
       if (loggedContainer) loggedContainer.classList.remove("hidden");
       if (unloggedContainer) unloggedContainer.classList.add("hidden");
       if (userNameEl) userNameEl.textContent = user.nome;
+      if (userSiapeEl) userSiapeEl.textContent = `SIAPE ${user.siape || "-"}`;
 
       if (userBadgeEl) {
         if (isGestor) {
@@ -1817,8 +1784,8 @@ class AppManager {
         const setor = document.getElementById("usr-setor").value.trim();
         const perfil = document.getElementById("usr-perfil").value;
 
-        if (!email.endsWith("@academico.ufpb.br") && email !== "hjfd@cademico.ufpb.br") {
-          alert("Apenas e-mails institucionais com terminação @academico.ufpb.br são permitidos.");
+        if (!email || !email.includes("@")) {
+          alert("Informe um e-mail institucional válido para o servidor.");
           return;
         }
 
@@ -1861,14 +1828,14 @@ class AppManager {
     const currentUser = window.authService.getCurrentUser();
 
     tbody.innerHTML = usuarios.map(u => {
-      const isCurrent = currentUser && (currentUser.email || "").toLowerCase() === (u.email || "").toLowerCase();
-      const isMaster = (u.email || "").toLowerCase() === "hjfd@academico.ufpb.br" || (u.email || "").toLowerCase() === "hjfd@cademico.ufpb.br";
+      const isCurrent = currentUser && (String(currentUser.siape).trim() === String(u.siape).trim() || (currentUser.email || "").toLowerCase() === (u.email || "").toLowerCase());
+      const isMaster = String(u.siape).trim() === "1046483" || (u.email || "").toLowerCase() === "hjfd@academico.ufpb.br";
 
-      const badgePerfil = (u.perfil === "gestor" || u.perfil === "admin")
+      const badgePerfil = (isMaster || u.perfil === "gestor")
         ? `<span class="bg-blue-100 text-blue-900 border border-blue-300 font-bold px-2 py-0.5 rounded text-[11px]">Gestor</span>`
         : `<span class="bg-slate-100 text-slate-800 border border-slate-300 font-bold px-2 py-0.5 rounded text-[11px]">Usuário</span>`;
 
-      const perms = u.permissoes || (u.perfil === "gestor" ? { aprovar: true, checklist: true, bloqueio: true, usuarios: true } : { aprovar: true });
+      const perms = u.permissoes || (isMaster ? { aprovar: true, checklist: true, bloqueio: true, usuarios: true } : { aprovar: true });
       const permChips = [];
       if (perms.aprovar) permChips.push('<span class="bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded text-[10px]">Aprovar</span>');
       if (perms.checklist) permChips.push('<span class="bg-blue-50 text-blue-800 border border-blue-200 px-1.5 py-0.5 rounded text-[10px]">Checklist</span>');
@@ -1883,7 +1850,7 @@ class AppManager {
         <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
           <td class="py-3 px-4 font-bold text-slate-800">${this.escapeHtml(u.nome)}</td>
           <td class="py-3 px-4 text-xs font-mono font-bold text-slate-700">${this.escapeHtml(u.siape || "-")}</td>
-          <td class="py-3 px-4 text-xs font-mono text-slate-600">${this.escapeHtml(u.email)}</td>
+          <td class="py-3 px-4 text-xs font-mono text-slate-600">${this.escapeHtml(u.email || "-")}</td>
           <td class="py-3 px-4 text-xs text-slate-600">${this.escapeHtml(u.setor || "-")}</td>
           <td class="py-3 px-4">${badgePerfil}</td>
           <td class="py-3 px-4">
@@ -1894,6 +1861,9 @@ class AppManager {
             ${isMaster ? `
               <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded">Gestor Permanente</span>
             ` : (!isCurrent ? `
+              <button onclick="appManager.resetUserPassword('${u.id}')" class="text-xs font-semibold px-2 py-1 rounded mr-1 bg-slate-100 text-slate-700 hover:bg-slate-200" title="Redefine a senha para ufpb123 com troca obrigatória no próximo login">
+                Resetar Senha
+              </button>
               <button onclick="appManager.toggleUserStatus('${u.id}', '${u.status}')" class="text-xs font-semibold px-2 py-1 rounded mr-1 ${u.status === 'ativo' ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' : 'bg-green-50 text-green-700 hover:bg-green-100'}">
                 ${u.status === 'ativo' ? 'Desativar' : 'Ativar'}
               </button>
@@ -1907,10 +1877,28 @@ class AppManager {
     }).join("");
   }
 
+  async resetUserPassword(id) {
+    const usuarios = await window.storageService.getUsuarios();
+    const u = usuarios.find(usr => usr.id === id);
+    if (!u) return;
+
+    if (!confirm(`Deseja redefinir a senha de ${u.nome} (SIAPE ${u.siape}) para a senha padrão 'ufpb123'? No próximo login, o servidor deverá cadastrar uma nova senha pessoal.`)) {
+      return;
+    }
+
+    try {
+      await window.storageService.updateUsuario(id, { senha: "ufpb123", primeiroAcesso: true });
+      this.showToast(`Senha de ${u.nome} redefinida para 'ufpb123' com sucesso!`, "success");
+      this.renderUsuariosList();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
   async toggleUserStatus(id, currentStatus) {
     const usuarios = await window.storageService.getUsuarios();
     const u = usuarios.find(usr => usr.id === id);
-    if (u && ((u.email || "").toLowerCase() === "hjfd@academico.ufpb.br" || (u.email || "").toLowerCase() === "hjfd@cademico.ufpb.br")) {
+    if (u && (String(u.siape).trim() === "1046483" || (u.email || "").toLowerCase() === "hjfd@academico.ufpb.br")) {
       alert("Ação não permitida: O Gestor permanente (Hidelbrando Diógenes) não pode ser desativado.");
       return;
     }
@@ -1928,7 +1916,7 @@ class AppManager {
   async deleteUser(id) {
     const usuarios = await window.storageService.getUsuarios();
     const u = usuarios.find(usr => usr.id === id);
-    if (u && ((u.email || "").toLowerCase() === "hjfd@academico.ufpb.br" || (u.email || "").toLowerCase() === "hjfd@cademico.ufpb.br")) {
+    if (u && (String(u.siape).trim() === "1046483" || (u.email || "").toLowerCase() === "hjfd@academico.ufpb.br")) {
       alert("Ação não permitida: O Gestor permanente (Hidelbrando Diógenes) não pode ser excluído.");
       return;
     }

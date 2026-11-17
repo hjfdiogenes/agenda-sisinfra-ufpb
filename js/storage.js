@@ -6,12 +6,12 @@
 
 const SEED_USUARIOS = [
   {
-    id: "usr_hjfd_principal",
+    id: "usr_gestor_hidelbrando",
     nome: "Hidelbrando Diógenes",
-    siape: "1234567",
+    siape: "1046483",
     email: "hjfd@academico.ufpb.br",
     setor: "Pró-Reitoria de Graduação (PRG / UFPB)",
-    perfil: "gestor", // duas categorias: 'gestor' ou 'usuario'
+    perfil: "gestor", // ÚNICO GESTOR DO SISTEMA
     cargo: "Gestor",
     permissoes: {
       aprovar: true,
@@ -20,26 +20,9 @@ const SEED_USUARIOS = [
       usuarios: true
     },
     status: "ativo",
-    senha: "admin123",
+    senha: "ufpb123",
+    primeiroAcesso: true,
     criadoEm: "2026-01-15T08:00:00.000Z"
-  },
-  {
-    id: "usr_operador",
-    nome: "Técnico de Apoio Acadêmico",
-    siape: "7654321",
-    email: "operador@academico.ufpb.br",
-    setor: "Central de Aulas - Campus I",
-    perfil: "usuario",
-    cargo: "Usuário",
-    permissoes: {
-      aprovar: true,
-      checklist: false,
-      bloqueio: false,
-      usuarios: false
-    },
-    status: "ativo",
-    senha: "operador123",
-    criadoEm: "2026-02-01T10:00:00.000Z"
   }
 ];
 
@@ -365,57 +348,77 @@ class StorageService {
       storedUsers = [];
     }
 
-    if (!Array.isArray(storedUsers) || storedUsers.length === 0) {
-      localStorage.setItem("prg_usuarios", JSON.stringify(SEED_USUARIOS));
-    } else {
-      // Garante que o Gestor hjfd@academico.ufpb.br esteja presente e com status ativo e perfil gestor
-      const hasMaster = storedUsers.some(u => 
-        (u.email || "").toLowerCase() === "hjfd@academico.ufpb.br" || 
-        (u.email || "").toLowerCase() === "hjfd@cademico.ufpb.br"
+    // Inicialização da Conta do Gestor Único (Hidelbrando Diógenes - SIAPE 1046483)
+    const seedSiapeKey = localStorage.getItem("prg_seed_siape_1046483_v1");
+    if (!seedSiapeKey) {
+      let currentUsers = [];
+      try {
+        currentUsers = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
+      } catch (e) {
+        currentUsers = [];
+      }
+
+      // Procura se já existia usuário do Hidelbrando
+      const existingGestor = currentUsers.find(u => 
+        String(u.siape).trim() === "1046483" || 
+        String(u.siape).trim() === "1234567" ||
+        (u.email || "").toLowerCase() === "hjfd@academico.ufpb.br"
       );
 
-      if (!hasMaster) {
-        // Adiciona o Gestor no topo
-        storedUsers = storedUsers.filter(u => (u.email || "").toLowerCase() !== "admin@academico.ufpb.br");
-        storedUsers.unshift(SEED_USUARIOS[0]);
-        localStorage.setItem("prg_usuarios", JSON.stringify(storedUsers));
-      } else {
-        let changed = false;
+      const gestorUser = {
+        id: "usr_gestor_hidelbrando",
+        nome: "Hidelbrando Diógenes",
+        siape: "1046483", // SIAPE Oficial do Gestor
+        email: "hjfd@academico.ufpb.br",
+        setor: "Pró-Reitoria de Graduação (PRG / UFPB)",
+        perfil: "gestor", // Único Gestor do Sistema
+        cargo: "Gestor",
+        permissoes: {
+          aprovar: true,
+          checklist: true,
+          bloqueio: true,
+          usuarios: true
+        },
+        status: "ativo",
+        senha: (existingGestor && existingGestor.senha && existingGestor.senha !== "admin123") ? existingGestor.senha : "ufpb123",
+        primeiroAcesso: (existingGestor && existingGestor.primeiroAcesso === false) ? false : true,
+        criadoEm: "2026-01-15T08:00:00.000Z"
+      };
+
+      // Remove usuários mock legados e insere o Gestor no topo
+      const cleanUsers = currentUsers.filter(u => 
+        String(u.siape).trim() !== "1046483" && 
+        String(u.siape).trim() !== "1234567" &&
+        String(u.siape).trim() !== "7654321" &&
+        (u.email || "").toLowerCase() !== "hjfd@academico.ufpb.br" &&
+        (u.email || "").toLowerCase() !== "operador@academico.ufpb.br"
+      );
+      cleanUsers.unshift(gestorUser);
+
+      localStorage.setItem("prg_usuarios", JSON.stringify(cleanUsers));
+      localStorage.setItem("prg_seed_siape_1046483_v1", "true");
+    } else {
+      try {
+        const storedUsers = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
+        let hasGestor = false;
         storedUsers.forEach(u => {
-          const em = (u.email || "").toLowerCase();
-          if (em === "hjfd@academico.ufpb.br" || em === "hjfd@cademico.ufpb.br") {
-            if (u.perfil !== "gestor" || u.status !== "ativo" || u.nome !== "Hidelbrando Diógenes" || !u.siape || !u.permissoes) {
-              u.perfil = "gestor";
-              u.status = "ativo";
-              u.nome = "Hidelbrando Diógenes";
-              u.siape = u.siape || "1234567";
-              u.cargo = "Gestor";
-              u.permissoes = {
-                aprovar: true,
-                checklist: true,
-                bloqueio: true,
-                usuarios: true
-              };
-              changed = true;
-            }
-          } else {
-            // Outros usuários pertencem à categoria usuario por padrão se não forem gestores
-            if (!u.perfil || (u.perfil !== "gestor" && u.perfil !== "usuario")) {
-              u.perfil = "usuario";
-              u.cargo = u.cargo || "Usuário";
-              u.permissoes = u.permissoes || {
-                aprovar: true,
-                checklist: false,
-                bloqueio: false,
-                usuarios: false
-              };
-              changed = true;
-            }
+          if (String(u.siape).trim() === "1046483" || (u.email || "").toLowerCase() === "hjfd@academico.ufpb.br") {
+            u.nome = "Hidelbrando Diógenes";
+            u.siape = "1046483";
+            u.perfil = "gestor";
+            u.cargo = "Gestor";
+            u.status = "ativo";
+            u.permissoes = { aprovar: true, checklist: true, bloqueio: true, usuarios: true };
+            if (!u.senha) u.senha = "ufpb123";
+            hasGestor = true;
           }
         });
-        if (changed) {
-          localStorage.setItem("prg_usuarios", JSON.stringify(storedUsers));
+        if (!hasGestor) {
+          storedUsers.unshift(SEED_USUARIOS[0]);
         }
+        localStorage.setItem("prg_usuarios", JSON.stringify(storedUsers));
+      } catch (e) {
+        localStorage.setItem("prg_usuarios", JSON.stringify(SEED_USUARIOS));
       }
     }
 
@@ -890,6 +893,7 @@ class StorageService {
           },
       status: data.status || "ativo",
       senha: data.senha || "ufpb123",
+      primeiroAcesso: true, // Força redefinição de senha no primeiro login com SIAPE
       criadoEm: new Date().toISOString()
     };
 
@@ -973,6 +977,35 @@ class StorageService {
     const filtered = list.filter(u => u.id !== id);
     localStorage.setItem("prg_usuarios", JSON.stringify(filtered));
     return true;
+  }
+
+  async updateUsuarioSenha(idOrSiape, newPassword) {
+    const clean = String(idOrSiape || "").trim();
+    const cleanPwd = String(newPassword || "").trim();
+    if (!cleanPwd || cleanPwd.length < 6) {
+      throw new Error("A nova senha deve possuir pelo menos 6 caracteres.");
+    }
+
+    const list = JSON.parse(localStorage.getItem("prg_usuarios") || "[]");
+    const idx = list.findIndex(u => u.id === clean || String(u.siape).trim() === clean);
+    if (idx >= 0) {
+      list[idx].senha = cleanPwd;
+      list[idx].primeiroAcesso = false;
+      localStorage.setItem("prg_usuarios", JSON.stringify(list));
+
+      if (window.isFirebaseActive && window.fbDb) {
+        try {
+          await window.fbDb.collection("usuarios").doc(list[idx].id).update({
+            senha: cleanPwd,
+            primeiroAcesso: false
+          });
+        } catch (e) {
+          console.warn("Aviso ao salvar nova senha no Firestore:", e);
+        }
+      }
+      return list[idx];
+    }
+    throw new Error("Usuário não encontrado para atualizar a senha.");
   }
 
   // ================= BLOQUEIOS DE HORÁRIOS & PERÍODOS LETIVOS =================
