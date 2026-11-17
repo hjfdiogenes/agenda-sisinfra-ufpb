@@ -21,6 +21,17 @@ const firebaseConfig = {
   appId: "1:123456789012:web:abcdef1234567890"
 };
 
+// Verifica se há configuração salva no localStorage pelo Gestor
+try {
+  const localSaved = localStorage.getItem("prg_firebase_config");
+  if (localSaved) {
+    const parsed = JSON.parse(localSaved);
+    if (parsed.apiKey && parsed.projectId && parsed.apiKey !== "SUA_API_KEY_AQUI") {
+      Object.assign(firebaseConfig, parsed);
+    }
+  }
+} catch (e) {}
+
 // Verifica se as credenciais reais foram preenchidas
 function isFirebaseConfigured() {
   return (

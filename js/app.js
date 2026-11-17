@@ -204,7 +204,7 @@ class AppManager {
         } finally {
           if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = `<span>Acessar o Sistema</span><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>`;
+            submitBtn.innerHTML = `<span>Acessar a Agenda SisInfra</span><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>`;
           }
         }
       });
@@ -236,7 +236,7 @@ class AppManager {
 
           await window.authService.changePassword(novaSenha);
           this.closeModal("modal-primeiro-acesso");
-          this.showToast("Nova senha cadastrada com sucesso! Bem-vindo ao SisInfra.", "success");
+          this.showToast("Nova senha cadastrada com sucesso! Bem-vindo à Agenda SisInfra.", "success");
         } catch (err) {
           alert(err.message || "Erro ao salvar nova senha.");
         } finally {
