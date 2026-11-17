@@ -68,8 +68,12 @@ class CalendarManager {
     const groupMap = new Map();
     reservaveis.forEach(sp => {
       let groupName = sp.bloco || "Outros Espaços";
-      if (sp.id === "INFRA2220PRG" || sp.id === "INFRA2202PRG" || sp.id === "INFRA2289PRG" || sp.id === "INFRA2290PRG" || sp.nome.includes("AUDITÓRIO") || sp.nome.includes("REUNIÃO")) {
-        groupName = "Auditórios & Reuniões PRG";
+      if (sp.id === "INFRA2289PRG" || (sp.bloco && sp.bloco.includes("Reitoria")) || sp.nome.includes("REUNIÃO")) {
+        groupName = "Prédio da Reitoria (PRG)";
+      } else if (sp.id === "INFRA2220PRG" || sp.id === "INFRA2202PRG" || sp.nome.includes("AUDITÓRIO")) {
+        groupName = "Central de Aulas - Auditórios";
+      } else if (sp.id === "INFRA_AUTORREGULACAO_PRG" || sp.id === "INFRA2235PRG" || sp.nome.includes("AUTORREGULAÇÃO") || sp.nome.includes("D109")) {
+        groupName = "Central de Aulas - Bloco D (Sala D109)";
       }
       if (!groupMap.has(groupName)) groupMap.set(groupName, []);
       groupMap.get(groupName).push(sp);
@@ -78,6 +82,8 @@ class CalendarManager {
     const sortedGroups = Array.from(groupMap.keys()).sort((a, b) => {
       if (a.includes("Auditórios")) return -1;
       if (b.includes("Auditórios")) return 1;
+      if (a.includes("Reitoria")) return -1;
+      if (b.includes("Reitoria")) return 1;
       return a.localeCompare(b);
     });
 
@@ -97,21 +103,17 @@ class CalendarManager {
 
     filterSelect.innerHTML = html;
 
-    // Renderiza legenda dinâmica (Auditórios principais + salas de aula)
+    // Renderiza legenda dinâmica com os espaços reserváveis oficiais
     const legendEl = document.getElementById("calendar-legend-container");
     if (legendEl) {
-      const mainSpaces = reservaveis.filter(sp => sp.id === "INFRA2220PRG" || sp.id === "INFRA2202PRG" || sp.id === "INFRA2289PRG" || sp.id === "INFRA2290PRG");
+      const mainSpaces = reservaveis.filter(sp => sp.reservavel === true);
       legendEl.innerHTML = `
         ${mainSpaces.map(sp => `
           <div class="flex items-center gap-1.5 text-xs text-slate-700 font-medium">
-            <span class="w-3 h-3 rounded-full" style="background-color: ${sp.cor || '#00509e'}"></span>
-            <span>${this.escapeHtml(sp.nomeAmigavel || sp.nome)}</span>
+            <span class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: ${sp.cor || '#00509e'}"></span>
+            <span class="truncate">${this.escapeHtml(sp.nomeAmigavel || sp.nome)}</span>
           </div>
         `).join("")}
-        <div class="flex items-center gap-1.5 text-xs text-blue-700 font-semibold bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
-          <span>🏛️</span>
-          <span>59 Salas da Central de Aulas</span>
-        </div>
       `;
     }
   }

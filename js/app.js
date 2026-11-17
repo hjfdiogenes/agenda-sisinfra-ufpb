@@ -340,8 +340,12 @@ class AppManager {
     const groupMap = new Map();
     reservaveis.forEach(sp => {
       let groupName = sp.bloco || "Outros Espaços";
-      if (sp.id === "INFRA2220PRG" || sp.id === "INFRA2202PRG" || sp.id === "INFRA2289PRG" || sp.id === "INFRA2290PRG" || sp.nome.includes("AUDITÓRIO") || sp.nome.includes("REUNIÃO")) {
-        groupName = "Auditórios & Reuniões PRG";
+      if (sp.id === "INFRA2289PRG" || (sp.bloco && sp.bloco.includes("Reitoria")) || sp.nome.includes("REUNIÃO")) {
+        groupName = "Prédio da Reitoria (PRG)";
+      } else if (sp.id === "INFRA2220PRG" || sp.id === "INFRA2202PRG" || sp.nome.includes("AUDITÓRIO")) {
+        groupName = "Central de Aulas - Auditórios";
+      } else if (sp.id === "INFRA_AUTORREGULACAO_PRG" || sp.id === "INFRA2235PRG" || sp.nome.includes("AUTORREGULAÇÃO") || sp.nome.includes("D109")) {
+        groupName = "Central de Aulas - Bloco D (Sala D109)";
       }
       if (!groupMap.has(groupName)) groupMap.set(groupName, []);
       groupMap.get(groupName).push(sp);
@@ -350,6 +354,8 @@ class AppManager {
     const sortedGroups = Array.from(groupMap.keys()).sort((a, b) => {
       if (a.includes("Auditórios")) return -1;
       if (b.includes("Auditórios")) return 1;
+      if (a.includes("Reitoria")) return -1;
+      if (b.includes("Reitoria")) return 1;
       return a.localeCompare(b);
     });
 

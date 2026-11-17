@@ -320,9 +320,9 @@ class StorageService {
     if (!id) return "INFRA2220PRG";
     const str = String(id).trim();
     if (str === "1") return "INFRA2220PRG"; // Auditório 1
-    if (str === "2") return "INFRA2202PRG"; // Auditório 2 (Atualização SisInfra 11/11/2026)
-    if (str === "3") return "INFRA2289PRG"; // Sala de Reunião Principal
-    if (str === "4") return "INFRA2290PRG"; // Sala de Reunião Secretaria
+    if (str === "2") return "INFRA2202PRG"; // Auditório 2 (Central de Aulas)
+    if (str === "3") return "INFRA2289PRG"; // Sala de Reuniões da PRG (Prédio da Reitoria)
+    if (str === "4" || str === "INFRA2235PRG" || str === "D109" || str === "INFRA_AUTORREGULACAO_PRG") return "INFRA_AUTORREGULACAO_PRG"; // Sala de Autorregulação (Sala D109)
     return str;
   }
 
